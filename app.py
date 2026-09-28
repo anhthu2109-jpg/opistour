@@ -16,7 +16,7 @@ if 'admin_authenticated' not in st.session_state:
 # 1. CẤU HÌNH TRANG & GIAO DIỆN HỆ THỐNG
 # ==========================================
 st.set_page_config(
-    page_title="Viet Travel Enterprise - Platform Điều Hành & Đặt Tour",
+    page_title="Opis Tour Enterprise - Platform Điều Hành & Đặt Tour",
     page_icon="✈️",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -265,7 +265,7 @@ if "chat_history" not in st.session_state:
 # ==========================================
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/201/201623.png", width=65)
-    st.title("VIET TRAVEL ENTERPRISE")
+    st.title("OPIS TOUR ENTERPRISE")
     app_mode = st.radio(
         "🔀 CHỌN CHẾ ĐỘ SỬ DỤNG:",
         ["🌟 CỔNG ĐẶT TOUR (Dành cho Khách)", "💬 CHATBOT TƯ VẤN LỊCH TRÌNH", "👔 HỆ THỐNG QUẢN TRỊ (Dành cho CEO)"],
