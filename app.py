@@ -6,9 +6,11 @@ import pymysql
 from google import genai
 
 import google.generativeai as genai
-import os
 
-genai.configure(api_key=os.environ["AQ.Ab8RN6Im4364rpP31Dyfxf1h6utzE7Yrouc2hIDpr3GySRYFjg"])
+# Dán trực tiếp chuỗi API Key của bạn vào dạng chuỗi
+GEMINI_API_KEY = "AQ.Ab8RN6Im4364rpP31Dyfxf1h6utzE7Yrouc2hIDpr3GySRYFjg" 
+
+genai.configure(api_key=GEMINI_API_KEY)
 
 # ==========================================
 # CẤU HÌNH BẢO MẬT ADMIN & KẾT NỐI DATABASE AIVEN
