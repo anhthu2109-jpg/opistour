@@ -259,7 +259,7 @@ if "chat_history" not in st.session_state:
 # 3. THANH ĐIỀU HƯỚNG CHÍNH (SIDEBAR)
 # ==========================================
 with st.sidebar:
-    st.image("images.jpg", width=80)
+    st.image("images.jpg", width=65, length=100)
     st.title("OPIS TOUR ENTERPRISE")
     
     # ĐOẠN KIỂM TRA TRẠNG THÁI KẾT NỐI AIVEN
