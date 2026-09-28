@@ -260,6 +260,7 @@ if "chat_history" not in st.session_state:
 # ==========================================
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/201/201623.png", width=65)
+    st.image("images.jpg", width=80)
     st.title("OPIS TOUR ENTERPRISE")
     
     # ĐOẠN KIỂM TRA TRẠNG THÁI KẾT NỐI AIVEN
