@@ -471,15 +471,23 @@ elif "CHATBOT" in app_mode:
             else:
                 with st.spinner("🤖 Trợ lý AI đang soạn câu trả lời chi tiết cho bạn..."):
                     try:
-                        from google import genai
-                        from google.genai import types
+                       from google import genai
+from google.genai import types
 
-                        client = genai.Client(api_key=api_key)
+# Tự động làm sạch khoảng trắng thừa nếu có
+clean_api_key = api_key.strip() if api_key else ""
 
-                        # Chuẩn bị Ngữ cảnh dữ liệu (System Context / Knowledge Base)
-                        hotels_summary = st.session_state.df_hotels.to_string(index=False)
-                        
-                        system_instruction = f"""
+if not clean_api_key:
+    st.warning("⚠️ Chưa cấu hình API Key: Vui lòng nhập Gemini API Key ở thanh bên trái (Sidebar) hoặc thêm GEMINI_API_KEY vào Streamlit Secrets!")
+else:
+    with st.spinner("🤖 Trợ lý AI đang soạn câu trả lời chi tiết cho bạn..."):
+        try:
+            # Khởi tạo Client với API Key đã làm sạch
+            client = genai.Client(api_key=clean_api_key)
+
+            hotels_summary = st.session_state.df_hotels.to_string(index=False)
+            
+            system_instruction = f"""
 Bạn là Trợ lý Chuyên viên Tư vấn Du lịch Cao cấp của công ty Opis Tour Enterprise.
 Nhiệm vụ của bạn là tư vấn cho khách hàng về các tour du lịch, lịch trình, mẹo du lịch, ẩm thực, lưu trú và dự toán chi phí một cách thân thiện, chuyên nghiệp, hấp dẫn, không dập khuôn máy móc.
 
@@ -500,47 +508,45 @@ DƯỚI ĐÂY LÀ DỮ LIỆU NỘI BỘ CỦA OPIS TOUR:
 
 QUY TẮC PHẢN HỒI:
 - Trả lời bằng tiếng Việt tự nhiên, cuốn hút, giàu cảm xúc, sinh động.
-- Dựa trên dữ liệu nội bộ ở trên để đưa ra thông tin chính xác, nhưng linh hoạt điều chỉnh theo nhu cầu riêng của từng khách (ví dụ: khách đi gia đình, cặp đôi, có người già/trẻ nhỏ).
-- Nếu khách hỏi lịch trình, hãy trình bày đẹp mắt bằng Emoji, phân chia theo từng ngày rõ ràng.
-- Gợi ý khách sang tab 'CỔNG ĐẶT TOUR' ở thanh bên trái nếu khách muốn nhận báo giá tự động chính xác.
-- Không nhắc lại nguyên văn cấu trúc câu lặp đi lặp lại.
+- Trình bày sinh động bằng Emoji, phân chia từng ngày rõ ràng.
+- Gợi ý khách sang tab 'CỔNG ĐẶT TOUR' ở thanh bên trái nếu muốn báo giá tự động.
 """
 
-                        # Xây dựng lịch sử hội thoại cho API
-                        contents = []
-                        for msg in st.session_state.chat_history[:-1]:
-                            contents.append(
-                                types.Content(
-                                    role="user" if msg["role"] == "user" else "model",
-                                    parts=[types.Part.from_text(text=msg["content"])]
-                                )
-                            )
-                        # Thêm câu hỏi mới nhất
-                        contents.append(
-                            types.Content(
-                                role="user",
-                                parts=[types.Part.from_text(text=prompt)]
-                            )
-                        )
+            # Xây dựng nội dung hội thoại
+            contents = []
+            for msg in st.session_state.chat_history[:-1]:
+                role = "user" if msg["role"] == "user" else "model"
+                contents.append(
+                    types.Content(
+                        role=role,
+                        parts=[types.Part.from_text(text=msg["content"])]
+                    )
+                )
+            
+            contents.append(
+                types.Content(
+                    role="user",
+                    parts=[types.Part.from_text(text=prompt)]
+                )
+            )
 
-                        # Gọi API Gemini 2.5 Flash
-                        ai_response = client.models.generate_content(
-                            model="gemini-2.5-flash",
-                            contents=contents,
-                            config=types.GenerateContentConfig(
-                                system_instruction=system_instruction,
-                                temperature=0.7, # Tạo độ biến hóa tự nhiên, tránh lặp từ
-                            )
-                        )
-                        response = ai_response.text
-                        st.markdown(response)
+            # Gọi Gemini API 2.5 Flash
+            ai_response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=contents,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_instruction,
+                    temperature=0.7,
+                )
+            )
+            
+            response = ai_response.text
+            st.markdown(response)
 
-                    except Exception as e:
-                        response = f"❌ Đã xảy ra lỗi khi kết nối với AI: {str(e)}\nVui lòng kiểm tra lại API Key hoặc kết nối mạng."
-                        st.error(response)
-
-        # Lưu câu trả lời vào Session State
-        st.session_state.chat_history.append({"role": "assistant", "content": response})
+        except Exception as e:
+            response = f"❌ Đã xảy ra lỗi khi kết nối với AI: {str(e)}\nVui lòng kiểm tra lại API Key hoặc kết nối mạng."
+            st.error(response)
+            
 # ------------------------------------------
 # CHẾ ĐỘ 3: QUẢN TRỊ CEO
 # ------------------------------------------
