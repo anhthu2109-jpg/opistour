@@ -151,6 +151,19 @@ FLIGHT_RATES = {
     "Bamboo Airways": {"Phổ thông": 2200000, "Thương gia": 5200000}
 }
 
+# Dữ liệu hình ảnh minh họa cho các điểm đến
+DESTINATION_IMAGES = {
+    "Sapa": "",
+    "Phú Quốc": "",
+    "Đà Nẵng": "",
+    "Đà Lạt": "",
+    "Hạ Long": "",
+    "Nha Trang": "",
+    "Hà Nội": "",
+    "Quy Nhơn": "",
+    "TP. Hồ Chí Minh": ""
+}
+
 ITINERARY_DATABASE = {
     "sapa": """
 🗓️ **Lịch trình gợi ý Sapa (3 Ngày 2 Đêm):**
@@ -288,6 +301,7 @@ with st.sidebar:
 if "CỔNG ĐẶT TOUR" in app_mode:
     st.markdown('<div class="main-title">🏖️ ĐẶT TOUR DU LỊCH THIẾT KẾ THEO YÊU CẦU CỦA BẠN</div>', unsafe_allow_html=True)
     st.caption("Hãy tự do thiết kế chuyến đi hoàn hảo của bạn. Hệ thống sẽ tự động tính toán chi phí minh bạch tức thì!")
+    
     c_left, c_right = st.columns([1.2, 1])
     with c_left:
         st.subheader("1. Thời gian & Mùa vụ du lịch")
@@ -303,11 +317,17 @@ if "CỔNG ĐẶT TOUR" in app_mode:
             is_peak = month_num in [6, 7, 8, 12, 1]
             season_label = "🔥 Mùa Cao Điểm (+20% phí)" if is_peak else "🍃 Mùa Thấp Điểm (Giá chuẩn)"
             st.text_input("Trạng thái mùa vụ", value=season_label, disabled=True)
+            
         st.subheader("2. Thông tin Chuyến đi & Cơ cấu Khách")
         available_locations = sorted(list(st.session_state.df_hotels["Địa điểm"].unique()))
         col_a, col_b = st.columns(2)
         with col_a:
             destination = st.selectbox("📍 Điểm đến bạn muốn đi", available_locations)
+            
+            # --- HIỂN THỊ HÌNH ẢNH ĐIỂM ĐẾN TỰ ĐỘNG ---
+            if destination in DESTINATION_IMAGES:
+                st.image(DESTINATION_IMAGES[destination], caption=f"Cảnh đẹp {destination}", use_container_width=True)
+                
             pax_adult = st.number_input("👨‍🦰 Người lớn (≥ 12 tuổi) [100% giá]", min_value=1, value=2, step=1)
             pax_child_5_12 = st.number_input("🧒 Trẻ em (5 - 12 tuổi) [50% giá]", min_value=0, value=1, step=1)
             pax_child_under_5 = st.number_input("👶 Trẻ em (< 5 tuổi) [Miễn phí 0%]", min_value=0, value=0, step=1)
@@ -329,6 +349,7 @@ if "CỔNG ĐẶT TOUR" in app_mode:
                 selected_hotel_name = f"Khách sạn Tiêu chuẩn {star_rating} (Tham chiếu)"
                 hotel_price_per_night = 4500000 if star_rating == "5 Sao" else (2000000 if star_rating == "4 Sao" else 900000)
                 st.info(f"💡 Chưa có Partner cụ thể cho tùy chọn này. Sử dụng đơn giá tham chiếu {star_rating}.")
+                
         st.subheader("3. Phương tiện & Dịch vụ đi kèm")
         col_f1, col_f2 = st.columns(2)
         with col_f1:
@@ -342,6 +363,7 @@ if "CỔNG ĐẶT TOUR" in app_mode:
             inc_car = st.checkbox("Xe riêng đưa đón suốt tuyến", value=True)
             inc_guide = st.checkbox("Hướng dẫn viên chuyên nghiệp", value=True)
             inc_meal = st.checkbox("Bao gồm ăn uống (3 bữa/ngày)", value=True)
+            
         st.markdown("""
         <div class="policy-box">
             <b>📌 LƯU Ý TRONG CHƯƠNG TRÌNH TOUR:</b><br>
@@ -350,6 +372,7 @@ if "CỔNG ĐẶT TOUR" in app_mode:
             • <b>Vé máy bay:</b> Giá vé trẻ em tuân thủ theo quy định riêng của từng hãng hàng không.
         </div>
         """, unsafe_allow_html=True)
+        
     with c_right:
         st.subheader("4. Báo Giá Chuyến Đi Chi Tiết")
         effective_pax_services = pax_adult + (pax_child_5_12 * 0.5)
@@ -364,6 +387,7 @@ if "CỔNG ĐẶT TOUR" in app_mode:
         cost_flight_total = flight_cost_per_person * (pax_adult + pax_child_5_12)
         total_cost_net = cost_hotel + cost_car + cost_guide + cost_meal + cost_flight_total
         selling_price = total_cost_net / 0.8  # Margin 20%
+        
         st.markdown(f"""
         <div class="booking-card">
             <h3 style="color: #15803D; margin:0;">TỔNG CHI PHÍ TRỌN GÓI</h3>
@@ -460,6 +484,8 @@ elif "CHATBOT" in app_mode:
     for message in st.session_state.chat_history:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
+            if "image" in message:
+                st.image(message["image"], use_container_width=True)
             
     user_input = st.chat_input("Nhập thắc mắc của bạn về lịch trình tour tại đây...")
     prompt = user_input or quick_q
@@ -467,16 +493,26 @@ elif "CHATBOT" in app_mode:
         st.session_state.chat_history.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
+            
         prompt_lower = prompt.lower()
         response = ""
         found_match = False
+        matched_img = None
+        
         # 1. Bắt từ khóa về Địa điểm / Lịch trình cụ thể
         for loc_key, itinerary in ITINERARY_DATABASE.items():
             if loc_key in prompt_lower:
                 response = f"Dưới đây là gợi ý lịch trình chi tiết cho chuyến đi **{loc_key.upper()}** của bạn:\n" + itinerary
                 response += "\n\n👉 Bạn có thể chuyển sang tab **'CỔNG ĐẶT TOUR'** ở thanh bên trái để chọn tháng đi, độ tuổi trẻ em, hãng máy bay và nhận báo giá trọn gói tự động nhé!"
                 found_match = True
+                
+                # Tìm ảnh tương ứng nếu có
+                for dest_name, img_url in DESTINATION_IMAGES.items():
+                    if loc_key in dest_name.lower():
+                        matched_img = img_url
+                        break
                 break
+                
         # 2. Bắt từ khóa về Check-in / Chụp ảnh / Sống ảo
         if not found_match and any(k in prompt_lower for k in ["check in", "checkin", "sống ảo", "chụp ảnh", "cảnh đẹp", "gợi ý đi", "thích check"]):
             response = EXTRA_KNOWLEDGE["checkin"]
@@ -524,9 +560,16 @@ elif "CHATBOT" in app_mode:
                 "- 📍 **Lịch trình tour chi tiết** (Sapa, Phú Quốc, Đà Nẵng, Đà Lạt...)\n"
                 "- 🚗 **Hướng dẫn di chuyển & Phương tiện**"
             )
+            
         with st.chat_message("assistant"):
             st.markdown(response)
-        st.session_state.chat_history.append({"role": "assistant", "content": response})
+            if matched_img:
+                st.image(matched_img, use_container_width=True)
+                
+        assistant_msg = {"role": "assistant", "content": response}
+        if matched_img:
+            assistant_msg["image"] = matched_img
+        st.session_state.chat_history.append(assistant_msg)
 
 # ------------------------------------------
 # CHẾ ĐỘ 3: QUẢN TRỊ CEO
