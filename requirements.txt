@@ -4,8 +4,4 @@ plotly>=5.18.0
 streamlit
 pandas
 pymysql
-cryptography
-streamlit
-pandas
-pymysql
 google-genai
