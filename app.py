@@ -153,7 +153,7 @@ FLIGHT_RATES = {
 
 # Dữ liệu hình ảnh minh họa cho các điểm đến
 DESTINATION_IMAGES = {
-    "Sapa": "",
+    "Sapa": "sapa.jpg",
     "Phú Quốc": "",
     "Đà Nẵng": "",
     "Đà Lạt": "",
