@@ -430,7 +430,7 @@ elif "CHATBOT" in app_mode:
     st.caption("Trợ lý AI Gemini thông minh sẵn sàng tư vấn chi tiết, linh hoạt và chuyên sâu 24/7.")
     
     # 1. Cấu hình API Key (Lấy từ st.secrets hoặc cho phép người dùng nhập)
-    api_key = st.secrets.get("AQ.Ab8RN6Im4364rpP31Dyfxf1h6utzE7Yrouc2hIDpr3GySRYFjg", None)
+    api_key = st.secrets.get("GEMINI_API_KEY", None)
     
     with st.sidebar:
         st.subheader("🔑 Cấu hình Chatbot AI")
@@ -471,7 +471,7 @@ elif "CHATBOT" in app_mode:
             else:
                 with st.spinner("🤖 Trợ lý AI đang soạn câu trả lời chi tiết cho bạn..."):
                     try:
-                       from google import genai
+                        from google import genai
 from google.genai import types
 
 # Tự động làm sạch khoảng trắng thừa nếu có
@@ -546,6 +546,9 @@ QUY TẮC PHẢN HỒI:
         except Exception as e:
             response = f"❌ Đã xảy ra lỗi khi kết nối với AI: {str(e)}\nVui lòng kiểm tra lại API Key hoặc kết nối mạng."
             st.error(response)
+
+        # Lưu câu trả lời vào Session State
+        st.session_state.chat_history.append({"role": "assistant", "content": response})
             
 # ------------------------------------------
 # CHẾ ĐỘ 3: QUẢN TRỊ CEO
