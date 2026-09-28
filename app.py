@@ -154,14 +154,14 @@ FLIGHT_RATES = {
 # Dữ liệu hình ảnh minh họa cho các điểm đến
 DESTINATION_IMAGES = {
     "Sapa": "sapa.jpg",
-    "Phú Quốc": "",
-    "Đà Nẵng": "",
-    "Đà Lạt": "",
-    "Hạ Long": "",
-    "Nha Trang": "",
-    "Hà Nội": "",
-    "Quy Nhơn": "",
-    "TP. Hồ Chí Minh": ""
+    "Phú Quốc": "phú quốc.jpg",
+    "Đà Nẵng": "đà nẵng.jpg",
+    "Đà Lạt": "đà lạt.jpg",
+    "Hạ Long": "hạ long.jpg",
+    "Nha Trang": "nha trang.jpg",
+    "Hà Nội": "hà nội.jpg",
+    "Quy Nhơn": "quy nhơn.jpg",
+    "TP. Hồ Chí Minh": "tphcm.jpg"
 }
 
 ITINERARY_DATABASE = {
