@@ -5,3 +5,4 @@ streamlit
 pandas
 pymysql
 cryptography
+google-genai
