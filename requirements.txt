@@ -8,5 +8,4 @@ cryptography
 streamlit
 pandas
 pymysql
-google-generativeai
-google-genai
+
