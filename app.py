@@ -497,7 +497,7 @@ elif "CHATBOT" in app_mode:
                     if client:
                         response = client.models.generate_content(
                             model='gemini-3.8-flash', 
-    contents=conversation_context
+                            contents=conversation_context
 )
                             contents=conversation_context
                         )
