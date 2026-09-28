@@ -5,4 +5,8 @@ streamlit
 pandas
 pymysql
 cryptography
+streamlit
+pandas
+pymysql
+google-generativeai
 google-genai
