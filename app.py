@@ -468,7 +468,6 @@ elif "CHATBOT" in app_mode:
     user_input = st.chat_input("Nhập thắc mắc của bạn về lịch trình tour tại đây...")
     prompt = user_input or quick_q
     if prompt:
-        if prompt:
         # Hiển thị câu hỏi của khách hàng
         st.session_state.chat_history.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
