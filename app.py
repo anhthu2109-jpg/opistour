@@ -6,7 +6,7 @@ import pymysql
 from google import genai
 
 # Thay chuỗi API Key của bạn lấy từ https://aistudio.google.com/ vào bên dưới
-GEMINI_API_KEY = "AQ.Ab8RN6K65E5S6OcGmuS0HiVo062VYSZVEgindQa620I8KfYQbQ" 
+GEMINI_API_KEY = "AQ.Ab8RN6Im4364rpP31Dyfxf1h6utzE7Yrouc2hIDpr3GySRYFjg" 
 try:
     client = genai.Client(api_key=GEMINI_API_KEY)
 except Exception as e:
