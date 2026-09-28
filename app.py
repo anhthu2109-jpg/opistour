@@ -423,59 +423,124 @@ if "CỔNG ĐẶT TOUR" in app_mode:
                     st.success("🎉 Đặt tour thành công! Đã lưu vào Aiven Database. Đội ngũ Điều hành sẽ liên hệ xác nhận trong 15 phút.")
 
 # ------------------------------------------
-# CHẾ ĐỘ 2: CHATBOT TƯ VẤN LỊCH TRÌNH
+# CHẾ ĐỘ 2: CHATBOT TƯ VẤN LỊCH TRÌNH THÔNG MINH (GEMINI AI INTEGRATED)
 # ------------------------------------------
 elif "CHATBOT" in app_mode:
-    st.markdown('<div class="main-title">💬 CHATBOT HỎI ĐÁP & TƯ VẤN LỊCH TRÌNH DU LỊCH</div>', unsafe_allow_html=True)
-    st.caption("Trợ lý AI sẵn sàng giải đáp thắc mắc về địa điểm, lịch trình chi tiết và chi phí dự kiến 24/7.")
+    st.markdown('<div class="main-title">💬 CHATBOT TƯ VẤN LỊCH TRÌNH & DỊCH VỤ TOUR NÂNG CẤP AI</div>', unsafe_allow_html=True)
+    st.caption("Trợ lý AI Gemini thông minh sẵn sàng tư vấn chi tiết, linh hoạt và chuyên sâu 24/7.")
+    
+    # 1. Cấu hình API Key (Lấy từ st.secrets hoặc cho phép người dùng nhập)
+    api_key = st.secrets.get("GEMINI_API_KEY", None)
+    
+    with st.sidebar:
+        st.subheader("🔑 Cấu hình Chatbot AI")
+        if not api_key:
+            api_key = st.text_input("Nhập Gemini API Key", type="password", help="Lấy API Key miễn phí tại Google AI Studio")
+        else:
+            st.success("🟢 API Key Gemini đã được tải!")
+
     st.write("💡 **Gợi ý câu hỏi nhanh:**")
     quick_cols = st.columns(4)
     quick_q = None
-    if quick_cols[0].button("📍 Lịch trình Sapa"): quick_q = "Gợi ý lịch trình tour Sapa"
-    if quick_cols[1].button("🏖️ Lịch trình Phú Quốc"): quick_q = "Cho tôi lịch trình đi Phú Quốc"
-    if quick_cols[2].button("🌉 Lịch trình Đà Nẵng"): quick_q = "Tư vấn tour Đà Nẵng"
-    if quick_cols[3].button("🌲 Lịch trình Đà Lạt"): quick_q = "Lịch trình đi Đà Lạt thế nào?"
+    if quick_cols[0].button("📍 Tour Sapa 3N2Đ thích hợp cho ai?"): quick_q = "Tour Sapa 3N2Đ thích hợp cho đối tượng nào và có điểm gì đặc sắc?"
+    if quick_cols[1].button("🏖️ Đi Phú Quốc mùa nào đẹp nhất?"): quick_q = "Nên đi Phú Quốc vào tháng mấy và cần lưu ý gì về chi phí?"
+    if quick_cols[2].button("🌉 Tư vấn tour Đà Nẵng có trẻ em"): quick_q = "Nhà mình có 2 người lớn và 1 trẻ em 6 tuổi, tư vấn tour Đà Nẵng 3N2Đ phù hợp với!"
+    if quick_cols[3].button("🌲 So sánh Đà Lạt và Sapa"): quick_q = "Nên chọn đi Đà Lạt hay Sapa cho kỳ nghỉ gia đình?"
+
     st.divider()
-    
+
+    # Hiển thị lịch sử chat
     for message in st.session_state.chat_history:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
-            
-    user_input = st.chat_input("Nhập thắc mắc của bạn về lịch trình tour tại đây...")
+
+    user_input = st.chat_input("Nhập thắc mắc của bạn về tour, lịch trình, ẩm thực, thời tiết...")
     prompt = user_input or quick_q
+
     if prompt:
+        # Thêm câu hỏi người dùng vào lịch sử
         st.session_state.chat_history.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
-        prompt_lower = prompt.lower()
-        response = ""
-        found_destination = False
-        for loc_key, itinerary in ITINERARY_DATABASE.items():
-            if loc_key in prompt_lower:
-                response = f"Dưới đây là gợi ý lịch trình chi tiết cho chuyến đi **{loc_key.upper()}** của bạn:\n" + itinerary
-                response += "\n\n👉 Bạn có thể chuyển sang tab **'CỔNG ĐẶT TOUR'** ở thanh bên trái để chọn tháng đi, độ tuổi trẻ em, hãng máy bay và nhận báo giá trọn gói tự động nhé!"
-                found_destination = True
-                break
-        if not found_destination:
-            if "trẻ em" in prompt_lower or "tuổi" in prompt_lower or "giá trẻ em" in prompt_lower:
-                response = """
-👶 **Chính sách giá tour theo độ tuổi tại Viet Travel:**
-- **Dưới 5 tuổi:** Miễn phí 100% giá dịch vụ tour.
-- **Từ 5 đến dưới 12 tuổi:** Tính 50% giá dịch vụ tour.
-- **Từ 12 tuổi trở lên:** Tính như người lớn (100% giá).
-                """
-            elif "mùa" in prompt_lower or "cao điểm" in prompt_lower or "tháng" in prompt_lower:
-                response = """
-📅 **Chính sách Mùa vụ Du lịch:**
-- **Mùa cao điểm (Tháng 6, 7, 8 và Tháng 12, 1):** Phụ thu 20% do dịch vụ vé tham quan, phòng ở và di chuyển tăng cao.
-- **Mùa thấp điểm (Các tháng còn lại):** Áp dụng nguyên giá chuẩn, nhiều ưu đãi đi kèm.
-                """
-            else:
-                response = f"Cảm ơn bạn đã đặt câu hỏi: *\"{prompt}\"*. Vui lòng chọn các địa điểm như Sapa, Phú Quốc, Đà Nẵng, Đà Lạt... để xem lịch trình chi tiết!"
-        with st.chat_message("assistant"):
-            st.markdown(response)
-        st.session_state.chat_history.append({"role": "assistant", "content": response})
 
+        # Xử lý phản hồi AI
+        with st.chat_message("assistant"):
+            if not api_key:
+                response = "⚠️ **Chưa cấu hình API Key:** Vui lòng nhập Gemini API Key ở thanh bên trái (Sidebar) hoặc thêm `GEMINI_API_KEY` vào Streamlit Secrets để sử dụng tính năng tư vấn AI thông minh!"
+                st.warning(response)
+            else:
+                with st.spinner("🤖 Trợ lý AI đang soạn câu trả lời chi tiết cho bạn..."):
+                    try:
+                        from google import genai
+                        from google.genai import types
+
+                        client = genai.Client(api_key=api_key)
+
+                        # Chuẩn bị Ngữ cảnh dữ liệu (System Context / Knowledge Base)
+                        hotels_summary = st.session_state.df_hotels.to_string(index=False)
+                        
+                        system_instruction = f"""
+Bạn là Trợ lý Chuyên viên Tư vấn Du lịch Cao cấp của công ty Opis Tour Enterprise.
+Nhiệm vụ của bạn là tư vấn cho khách hàng về các tour du lịch, lịch trình, mẹo du lịch, ẩm thực, lưu trú và dự toán chi phí một cách thân thiện, chuyên nghiệp, hấp dẫn, không dập khuôn máy móc.
+
+DƯỚI ĐÂY LÀ DỮ LIỆU NỘI BỘ CỦA OPIS TOUR:
+1. Lịch trình gợi ý có sẵn:
+{ITINERARY_DATABASE}
+
+2. Danh sách Khách sạn Đối tác:
+{hotels_summary}
+
+3. Bảng giá & Chính sách:
+- Bảng giá máy bay: {FLIGHT_RATES}
+- Chi phí di chuyển theo điểm đến: {TRANSPORT_RATES}
+- Phí HDV: {GUIDE_RATE} VNĐ/ngày
+- Giá ăn uống/ngày theo hạng: {MEAL_RATES}
+- Chính sách Trẻ em: < 5 tuổi Miễn phí; 5 - dưới 12 tuổi 50%; ≥ 12 tuổi 100%.
+- Mùa vụ: Tháng 6, 7, 8 & 12, 1 là Cao điểm (+20% phụ thu).
+
+QUY TẮC PHẢN HỒI:
+- Trả lời bằng tiếng Việt tự nhiên, cuốn hút, giàu cảm xúc, sinh động.
+- Dựa trên dữ liệu nội bộ ở trên để đưa ra thông tin chính xác, nhưng linh hoạt điều chỉnh theo nhu cầu riêng của từng khách (ví dụ: khách đi gia đình, cặp đôi, có người già/trẻ nhỏ).
+- Nếu khách hỏi lịch trình, hãy trình bày đẹp mắt bằng Emoji, phân chia theo từng ngày rõ ràng.
+- Gợi ý khách sang tab 'CỔNG ĐẶT TOUR' ở thanh bên trái nếu khách muốn nhận báo giá tự động chính xác.
+- Không nhắc lại nguyên văn cấu trúc câu lặp đi lặp lại.
+"""
+
+                        # Xây dựng lịch sử hội thoại cho API
+                        contents = []
+                        for msg in st.session_state.chat_history[:-1]:
+                            contents.append(
+                                types.Content(
+                                    role="user" if msg["role"] == "user" else "model",
+                                    parts=[types.Part.from_text(text=msg["content"])]
+                                )
+                            )
+                        # Thêm câu hỏi mới nhất
+                        contents.append(
+                            types.Content(
+                                role="user",
+                                parts=[types.Part.from_text(text=prompt)]
+                            )
+                        )
+
+                        # Gọi API Gemini 2.5 Flash
+                        ai_response = client.models.generate_content(
+                            model="gemini-2.5-flash",
+                            contents=contents,
+                            config=types.GenerateContentConfig(
+                                system_instruction=system_instruction,
+                                temperature=0.7, # Tạo độ biến hóa tự nhiên, tránh lặp từ
+                            )
+                        )
+                        response = ai_response.text
+                        st.markdown(response)
+
+                    except Exception as e:
+                        response = f"❌ Đã xảy ra lỗi khi kết nối với AI: {str(e)}\nVui lòng kiểm tra lại API Key hoặc kết nối mạng."
+                        st.error(response)
+
+        # Lưu câu trả lời vào Session State
+        st.session_state.chat_history.append({"role": "assistant", "content": response})
 # ------------------------------------------
 # CHẾ ĐỘ 3: QUẢN TRỊ CEO
 # ------------------------------------------
