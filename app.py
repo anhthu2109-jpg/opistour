@@ -153,23 +153,6 @@ FLIGHT_RATES = {
 }
 
 ITINERARY_DATABASE = {
-# Bộ dữ liệu tư vấn bổ sung cho Rule-based
-EXTRA_KNOWLEDGE = {
-    "checkin": """
-📸 **Gợi ý các điểm Check-in "Sống ảo" cực HOT theo từng địa điểm:**
-- **Sapa:** Swing Sapa, Moana Sapa, Bản Cát Cát, Đèo Ô Quy Hồ, Sun World Fansipan.
-- **Phú Quốc:** Sunset Sanato Beach Club, Grand World (Thành phố không ngủ), Địa Trung Hải Sun Premier Village.
-- **Đà Lạt:** Đồi Cầu Đất, Mongo Land, Khu du lịch Lá Phong, Cổng trời Bali.
-- **Đà Nẵng:** Cầu Vàng Bà Nà Hills, Phố cổ Hội An, Công viên APEC.
-    """,
-    "thay_doi_lich_trinh": """
-🔄 **Hỗ trợ tùy chỉnh lịch trình cá nhân hóa:**
-Tất cả các tour thiết kế tại Opis Tour đều có thể linh hoạt thay đổi theo yêu cầu của bạn!
-- **Nếu không muốn đi chùa / điểm tâm linh:** Bạn có thể thay bằng ghé thăm quán cafe view đẹp, điểm check-in thiên nhiên hoặc khu vui chơi giải trí.
-- **Nếu không thích leo núi / di chuyển nhiều:** Tư vấn viên sẽ xếp các điểm nghỉ dưỡng, đi cáp treo hoặc đi xe điện nhẹ nhàng.
-👉 Bạn vui lòng để lại số điện thoại hoặc liên hệ Hotline/Zalo để được tư vấn viên hỗ trợ điều chỉnh lịch trình riêng miễn phí nhé!
-    """
-}
     "sapa": """
 🗓️ **Lịch trình gợi ý Sapa (3 Ngày 2 Đêm):**
 - **Ngày 1:** Đến Sapa -> Check-in khách sạn -> Tham quan Bản Cát Cát, tìm hiểu văn hóa H'Mông -> Tối dạo Chợ đêm, thưởng thức đồ nướng.
@@ -207,7 +190,23 @@ Tất cả các tour thiết kế tại Opis Tour đều có thể linh hoạt t
 - **Ngày 3:** Tour lặn biển Hòn Mun / Đảo Yến -> Mua yến sào, nem nướng -> Tiễn khách.
     """
 }
-
+# Bộ dữ liệu tư vấn bổ sung cho Rule-based
+EXTRA_KNOWLEDGE = {
+    "checkin": """
+📸 **Gợi ý các điểm Check-in "Sống ảo" cực HOT theo từng địa điểm:**
+- **Sapa:** Swing Sapa, Moana Sapa, Bản Cát Cát, Đèo Ô Quy Hồ, Sun World Fansipan.
+- **Phú Quốc:** Sunset Sanato Beach Club, Grand World (Thành phố không ngủ), Địa Trung Hải Sun Premier Village.
+- **Đà Lạt:** Đồi Cầu Đất, Mongo Land, Khu du lịch Lá Phong, Cổng trời Bali.
+- **Đà Nẵng:** Cầu Vàng Bà Nà Hills, Phố cổ Hội An, Công viên APEC.
+    """,
+    "thay_doi_lich_trinh": """
+🔄 **Hỗ trợ tùy chỉnh lịch trình cá nhân hóa:**
+Tất cả các tour thiết kế tại Opis Tour đều có thể linh hoạt thay đổi theo yêu cầu của bạn!
+- **Nếu không muốn đi chùa / điểm tâm linh:** Bạn có thể thay bằng ghé thăm quán cafe view đẹp, điểm check-in thiên nhiên hoặc khu vui chơi giải trí.
+- **Nếu không thích leo núi / di chuyển nhiều:** Tư vấn viên sẽ xếp các điểm nghỉ dưỡng, đi cáp treo hoặc đi xe điện nhẹ nhàng.
+👉 Bạn vui lòng để lại số điện thoại hoặc liên hệ Hotline/Zalo để được tư vấn viên hỗ trợ điều chỉnh lịch trình riêng miễn phí nhé!
+    """
+}
 TRANSPORT_RATES = {
     "Phú Quốc": 1200000, "Đà Nẵng": 1000000, "Hà Nội": 900000, "Sapa": 1500000,
     "Nha Trang": 1100000, "Đà Lạt": 1300000, "Hạ Long": 1200000, "Quy Nhơn": 1200000, "TP. Hồ Chí Minh": 1000000
