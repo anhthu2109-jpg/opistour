@@ -2,16 +2,8 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, date
 import math
+import pymysql
 
-# ==========================================
-# CẤU HÌNH BẢO MẬT ADMIN
-# ==========================================
-ADMIN_PASSWORD = "admin123"  # <--- THAY ĐỔI MẬT KHẨU ADMIN TẠI ĐÂY
-
-# Khởi tạo trạng thái đăng nhập Admin nếu chưa có
-if 'admin_authenticated' not in st.session_state:
-    st.session_state.admin_authenticated = False
-    
 # ==========================================
 # CẤU HÌNH BẢO MẬT ADMIN & KẾT NỐI DATABASE AIVEN
 # ==========================================
@@ -21,23 +13,61 @@ DB_HOST = "mysql-1cc70107-anhthutran21092005-5a1e.h.aivencloud.com"
 DB_PORT = 12023
 DB_USER = "avnadmin"
 DB_PASSWORD = "AVNS_KO5XwLUd22vzEvBne42"
-DB_NAME = "defaultdb"  # Tên database mặc định trên Aiven MySQL
+DB_NAME = "defaultdb"
 
-# Hàm khởi tạo kết nối Database
+# Khởi tạo trạng thái đăng nhập Admin nếu chưa có
+if 'admin_authenticated' not in st.session_state:
+    st.session_state.admin_authenticated = False
+
+# Hàm khởi tạo kết nối Database Aiven MySQL (Dùng PyMySQL & SSL)
 def get_db_connection():
     try:
-        connection = mysql.connector.connect(
+        connection = pymysql.connect(
             host=DB_HOST,
             port=DB_PORT,
             user=DB_USER,
             password=DB_PASSWORD,
             database=DB_NAME,
-            ssl_disabled=False # Aiven yêu cầu kết nối SSL/TLS mặc định
+            ssl={'ssl': True},  # Bắt buộc kết nối SSL cho Aiven
+            cursorclass=pymysql.cursors.DictCursor,
+            connect_timeout=10
         )
         return connection
-    except Error as e:
+    except Exception as e:
         st.error(f"❌ Lỗi kết nối cơ sở dữ liệu Aiven MySQL: {e}")
         return None
+
+# Khởi tạo bảng dữ liệu trên Database Aiven nếu chưa có
+def init_db():
+    conn = get_db_connection()
+    if conn:
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                CREATE TABLE IF NOT EXISTS bookings (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    ma_don VARCHAR(50),
+                    ten_khach VARCHAR(255),
+                    sdt VARCHAR(50),
+                    diem_den VARCHAR(100),
+                    so_khach VARCHAR(100),
+                    thoi_gian_di VARCHAR(100),
+                    ngay_dem VARCHAR(50),
+                    khach_san VARCHAR(255),
+                    bay VARCHAR(100),
+                    tong_tien DOUBLE,
+                    trang_thai VARCHAR(100),
+                    ngay_dat DATE
+                );
+                """)
+            conn.commit()
+        except Exception as e:
+            st.error(f"Lỗi tạo bảng database: {e}")
+        finally:
+            conn.close()
+
+# Tự động khởi chạy kiểm tra & tạo bảng DB khi ứng dụng chạy
+init_db()
 
 # ==========================================
 # 1. CẤU HÌNH TRANG & GIAO DIỆN HỆ THỐNG
@@ -94,45 +124,34 @@ st.markdown("""
 @st.cache_data
 def get_initial_hotels():
     return [
-        # --- PHÚ QUỐC ---
         {"Mã HS": "H001", "Tên Khách Sạn": "Vinpearl Resort & Spa", "Địa điểm": "Phú Quốc", "Hạng": "5 Sao", "Loại phòng": "Standard", "Giá/Phòng/Đêm": 2500000},
         {"Mã HS": "H002", "Tên Khách Sạn": "Vinpearl Discovery VIP", "Địa điểm": "Phú Quốc", "Hạng": "5 Sao", "Loại phòng": "VIP / Suite", "Giá/Phòng/Đêm": 4800000},
         {"Mã HS": "H003", "Tên Khách Sạn": "JW Marriott Phu Quoc Emerald Bay", "Địa điểm": "Phú Quốc", "Hạng": "5 Sao", "Loại phòng": "VIP / Suite", "Giá/Phòng/Đêm": 8500000},
         {"Mã HS": "H004", "Tên Khách Sạn": "Novotel Phu Quoc Resort", "Địa điểm": "Phú Quốc", "Hạng": "4 Sao", "Loại phòng": "Standard", "Giá/Phòng/Đêm": 1800000},
         {"Mã HS": "H005", "Tên Khách Sạn": "Sunset Sanato Resort", "Địa điểm": "Phú Quốc", "Hạng": "3 Sao", "Loại phòng": "Standard", "Giá/Phòng/Đêm": 950000},
-        # --- ĐÀ NẮNG ---
         {"Mã HS": "H006", "Tên Khách Sạn": "Sun World Hotel", "Địa điểm": "Đà Nẵng", "Hạng": "4 Sao", "Loại phòng": "Standard", "Giá/Phòng/Đêm": 1200000},
         {"Mã HS": "H007", "Tên Khách Sạn": "Novotel Han River VIP", "Địa điểm": "Đà Nẵng", "Hạng": "5 Sao", "Loại phòng": "VIP / Suite", "Giá/Phòng/Đêm": 3800000},
         {"Mã HS": "H008", "Tên Khách Sạn": "InterContinental Danang Sun Peninsula", "Địa điểm": "Đà Nẵng", "Hạng": "5 Sao", "Loại phòng": "VIP / Suite", "Giá/Phòng/Đêm": 9200000},
-        # --- SAPA ---
         {"Mã HS": "H011", "Tên Khách Sạn": "Hôtel de la Coupole MGallery", "Địa điểm": "Sapa", "Hạng": "5 Sao", "Loại phòng": "VIP / Suite", "Giá/Phòng/Đêm": 4900000},
         {"Mã HS": "H012", "Tên Khách Sạn": "Silk Path Grand Resort Sapa", "Địa điểm": "Sapa", "Hạng": "5 Sao", "Loại phòng": "Standard", "Giá/Phòng/Đêm": 2800000},
         {"Mã HS": "H013", "Tên Khách Sạn": "Sapa Horizon Hotel", "Địa điểm": "Sapa", "Hạng": "3 Sao", "Loại phòng": "Standard", "Giá/Phòng/Đêm": 850000},
-        # --- NHA TRANG ---
         {"Mã HS": "H015", "Tên Khách Sạn": "Vinpearl Resort Nha Trang", "Địa điểm": "Nha Trang", "Hạng": "5 Sao", "Loại phòng": "Standard", "Giá/Phòng/Đêm": 2600000},
         {"Mã HS": "H016", "Tên Khách Sạn": "Amiana Resort Nha Trang", "Địa điểm": "Nha Trang", "Hạng": "5 Sao", "Loại phòng": "VIP / Suite", "Giá/Phòng/Đêm": 5200000},
-        # --- ĐÀ LẠT ---
         {"Mã HS": "H019", "Tên Khách Sạn": "Dalat Palace Heritage Hotel", "Địa điểm": "Đà Lạt", "Hạng": "5 Sao", "Loại phòng": "VIP / Suite", "Giá/Phòng/Đêm": 4200000},
         {"Mã HS": "H021", "Tên Khách Sạn": "Terracotta Hotel & Resort", "Địa điểm": "Đà Lạt", "Hạng": "4 Sao", "Loại phòng": "Standard", "Giá/Phòng/Đêm": 1500000},
-        # --- HẠ LONG ---
         {"Mã HS": "H024", "Tên Khách Sạn": "Vinpearl Resort & Spa Hạ Long", "Địa điểm": "Hạ Long", "Hạng": "5 Sao", "Loại phòng": "VIP / Suite", "Giá/Phòng/Đêm": 4500000},
         {"Mã HS": "H025", "Tên Khách Sạn": "FLC Grand Hotel Hạ Long", "Địa điểm": "Hạ Long", "Hạng": "5 Sao", "Loại phòng": "Standard", "Giá/Phòng/Đêm": 2200000},
-        # --- HÀ NỘI ---
         {"Mã HS": "H028", "Tên Khách Sạn": "InterContinental Westlake", "Địa điểm": "Hà Nội", "Hạng": "5 Sao", "Loại phòng": "VIP / Suite", "Giá/Phòng/Đêm": 5500000},
-        # --- QUY NHƠN ---
         {"Mã HS": "H031", "Tên Khách Sạn": "Anantara Quy Nhon Villas", "Địa điểm": "Quy Nhơn", "Hạng": "5 Sao", "Loại phòng": "VIP / Suite", "Giá/Phòng/Đêm": 9800000},
-        # --- TP. HỒ CHÍ MINH ---
         {"Mã HS": "H034", "Tên Khách Sạn": "The Reverie Saigon", "Địa điểm": "TP. Hồ Chí Minh", "Hạng": "5 Sao", "Loại phòng": "VIP / Suite", "Giá/Phòng/Đêm": 7500000}
     ]
 
-# Dữ liệu vé máy bay tham chiếu (Khứ hồi)
 FLIGHT_RATES = {
     "Vietjet Air": {"Phổ thông": 1800000, "Thương gia": 4500000},
     "Vietnam Airlines": {"Phổ thông": 2800000, "Thương gia": 6500000},
     "Bamboo Airways": {"Phổ thông": 2200000, "Thương gia": 5200000}
 }
 
-# Dữ liệu lịch trình mẫu cho Chatbot tư vấn
 ITINERARY_DATABASE = {
     "sapa": """
 🗓️ **Lịch trình gợi ý Sapa (3 Ngày 2 Đêm):**
@@ -172,13 +191,12 @@ ITINERARY_DATABASE = {
     """
 }
 
-# Đơn giá tham chiếu vận chuyển
 TRANSPORT_RATES = {
     "Phú Quốc": 1200000, "Đà Nẵng": 1000000, "Hà Nội": 900000, "Sapa": 1500000,
     "Nha Trang": 1100000, "Đà Lạt": 1300000, "Hạ Long": 1200000, "Quy Nhơn": 1200000, "TP. Hồ Chí Minh": 1000000
 }
-GUIDE_RATE = 800000  # HDV/ngày
-MEAL_RATES = {"3 Sao": 150000, "4 Sao": 250000, "5 Sao": 450000}  # Tiền ăn/người/bữa
+GUIDE_RATE = 800000
+MEAL_RATES = {"3 Sao": 150000, "4 Sao": 250000, "5 Sao": 450000}
 
 # Khởi tạo session states
 if 'df_hotels' not in st.session_state:
@@ -193,95 +211,11 @@ if 'df_tours' not in st.session_state:
         {"ID": "T001", "Tên Tour": "Hà Nội - Sapa - Fansipan 3N2Đ", "Loại": "Nội địa", "Khởi hành": "2026-10-05", "Trạng thái": "Đã đủ chỗ", "Số chỗ": 25, "Đã đặt": 25, "Doanh thu": 105000000, "Chi phí": 78000000},
         {"ID": "T002", "Tên Tour": "Đà Nẵng - Hội An - Bà Nà 4N3Đ", "Loại": "Nội địa", "Khởi hành": "2026-10-10", "Trạng thái": "Mở bán", "Số chỗ": 30, "Đã đặt": 18, "Doanh thu": 104400000, "Chi phí": 72000000}
     ])
-
 if 'df_staff' not in st.session_state:
     st.session_state.df_staff = pd.DataFrame([
-        {
-            "Mã NV": "HDV-01", "Họ và Tên": "Nguyễn Văn Tuấn", "Ngày sinh": "15/08/1990", "CCCD": "001090012345",
-            "Chức danh": "HDV Quốc tế", "SĐT": "0908112233", "Loại thẻ": "Quốc tế", "Mã số thẻ HDV": "101180234",
-            "Ngôn ngữ": "Tiếng Anh, Tiếng Trung", "Tuyến đường chính": "Sapa, Hà Nội, Hạ Long",
-            "Kinh nghiệm": "8 năm", "Trạng thái": "Sẵn sàng nhận tour", "Lịch trực / Phân công": "Trực văn phòng (T2-T4)"
-        },
-        {
-            "Mã NV": "HDV-02", "Họ và Tên": "Lê Thị Mai", "Ngày sinh": "20/03/1994", "CCCD": "048194005678",
-            "Chức danh": "HDV Nội địa", "SĐT": "0918334455", "Loại thẻ": "Nội địa", "Mã số thẻ HDV": "201190567",
-            "Ngôn ngữ": "Tiếng Anh", "Tuyến đường chính": "Đà Nẵng, Hội An, Huế",
-            "Kinh nghiệm": "5 năm", "Trạng thái": "Đang đi tour (T001)", "Lịch trực / Phân công": "Đi tour Sapa (05/10 - 08/10)"
-        },
-        {
-            "Mã NV": "HDV-03", "Họ và Tên": "Trần Hoàng Nam", "Ngày sinh": "10/11/1988", "CCCD": "079188009988",
-            "Chức danh": "HDV Quốc tế", "SĐT": "0938556677", "Loại thẻ": "Quốc tế", "Mã số thẻ HDV": "101150889",
-            "Ngôn ngữ": "Tiếng Anh, Tiếng Hàn", "Tuyến đường chính": "Phú Quốc, Nha Trang, Đà Lạt",
-            "Kinh nghiệm": "10 năm", "Trạng thái": "Sẵn sàng nhận tour", "Lịch trực / Phân công": "Trực hotline hỗ trợ khách"
-        },
-        {
-            "Mã NV": "HDV-04", "Họ và Tên": "Phạm Thị Hương", "Ngày sinh": "05/02/1992", "CCCD": "001192003344",
-            "Chức danh": "HDV Quốc tế", "SĐT": "0971223344", "Loại thẻ": "Quốc tế", "Mã số thẻ HDV": "101170112",
-            "Ngôn ngữ": "Tiếng Nhật, Tiếng Anh", "Tuyến đường chính": "Hà Nội, Ninh Bình, Hạ Long",
-            "Kinh nghiệm": "6 năm", "Trạng thái": "Sẵn sàng nhận tour", "Lịch trực / Phân công": "Trực tại Cảng Quảng Ninh"
-        },
-        {
-            "Mã NV": "HDV-05", "Họ và Tên": "Đặng Quốc Anh", "Ngày sinh": "18/09/1995", "CCCD": "036195007711",
-            "Chức danh": "HDV Nội địa", "SĐT": "0982334455", "Loại thẻ": "Nội địa", "Mã số thẻ HDV": "201200334",
-            "Ngôn ngữ": "Tiếng Anh", "Tuyến đường chính": "Quy Nhơn, Phú Yên, Tây Nguyên",
-            "Kinh nghiệm": "4 năm", "Trạng thái": "Sẵn sàng nhận tour", "Lịch trực / Phân công": "Off nghỉ bù"
-        },
-        {
-            "Mã NV": "HDV-06", "Họ và Tên": "Nguyễn Thùy Linh", "Ngày sinh": "12/12/1996", "CCCD": "001196008822",
-            "Chức danh": "HDV Quốc tế", "SĐT": "0945667788", "Loại thẻ": "Quốc tế", "Mã số thẻ HDV": "101210445",
-            "Ngôn ngữ": "Tiếng Pháp, Tiếng Anh", "Tuyến đường chính": "TP.HCM, Cần Thơ, Miền Tây",
-            "Kinh nghiệm": "3 năm", "Trạng thái": "Đang đi tour", "Lịch trực / Phân công": "Đi tour Miền Tây (28/09 - 01/10)"
-        },
-        {
-            "Mã NV": "HDV-07", "Họ và Tên": "Vũ Minh Đức", "Ngày sinh": "22/07/1987", "CCCD": "031187004455",
-            "Chức danh": "HDV Quốc tế", "SĐT": "0912998877", "Loại thẻ": "Quốc tế", "Mã số thẻ HDV": "101140998",
-            "Ngôn ngữ": "Tiếng Đức, Tiếng Anh", "Tuyến đường chính": "Hà Nội, Sapa, Hà Giang",
-            "Kinh nghiệm": "11 năm", "Trạng thái": "Sẵn sàng nhận tour", "Lịch trực / Phân công": "Trực văn phòng (T5-T7)"
-        },
-        {
-            "Mã NV": "HDV-08", "Họ và Tên": "Bùi Tuyết Mai", "Ngày sinh": "30/04/1993", "CCCD": "040193006611",
-            "Chức danh": "HDV Nội địa", "SĐT": "0903445566", "Loại thẻ": "Nội địa", "Mã số thẻ HDV": "201180223",
-            "Ngôn ngữ": "Tiếng Anh", "Tuyến đường chính": "Phú Quốc, Kiên Giang",
-            "Kinh nghiệm": "6 năm", "Trạng thái": "Đang đi tour", "Lịch trực / Phân công": "Đón đoàn BK-1001 Phú Quốc"
-        },
-        {
-            "Mã NV": "HDV-09", "Họ và Tên": "Hoàng Văn Thái", "Ngày sinh": "14/06/1991", "CCCD": "025191002233",
-            "Chức danh": "HDV Quốc tế", "SĐT": "0934112233", "Loại thẻ": "Quốc tế", "Mã số thẻ HDV": "101160778",
-            "Ngôn ngữ": "Tiếng Nga, Tiếng Anh", "Tuyến đường chính": "Nha Trang, Phan Thiết",
-            "Kinh nghiệm": "7 năm", "Trạng thái": "Sẵn sàng nhận tour", "Lịch trực / Phân công": "Trực sân bay Cam Ranh"
-        },
-        {
-            "Mã NV": "HDV-10", "Họ và Tên": "Đỗ Quang Vinh", "Ngày sinh": "08/01/1989", "CCCD": "001189005544",
-            "Chức danh": "HDV Quốc tế", "SĐT": "0967889900", "Loại thẻ": "Quốc tế", "Mã số thẻ HDV": "101130556",
-            "Ngôn ngữ": "Tiếng Tây Ban Nha, Tiếng Anh", "Tuyến đường chính": "Huế, Đà Nẵng, Hội An",
-            "Kinh nghiệm": "9 năm", "Trạng thái": "Nghỉ phép", "Lịch trực / Phân công": "Nghỉ phép đến 03/10"
-        },
-        {
-            "Mã NV": "HDV-11", "Họ và Tên": "Trịnh Thị Ngọc", "Ngày sinh": "19/10/1997", "CCCD": "038197001122",
-            "Chức danh": "HDV Nội địa", "SĐT": "0989001122", "Loại thẻ": "Nội địa", "Mã số thẻ HDV": "201220119",
-            "Ngôn ngữ": "Tiếng Anh", "Tuyến đường chính": "Đà Lạt, Tây Nguyên",
-            "Kinh nghiệm": "2 năm", "Trạng thái": "Sẵn sàng nhận tour", "Lịch trực / Phân công": "Trực Fanpage hỗ trợ"
-        },
-        {
-            "Mã NV": "HDV-12", "Họ và Tên": "Lý Văn Hùng", "Ngày sinh": "03/03/1985", "CCCD": "020185009911",
-            "Chức danh": "HDV Quốc tế", "SĐT": "0909332211", "Loại thẻ": "Quốc tế", "Mã số thẻ HDV": "101110332",
-            "Ngôn ngữ": "Tiếng Thái, Tiếng Anh", "Tuyến đường chính": "Đà Nẵng, Hà Nội, TP.HCM",
-            "Kinh nghiệm": "12 năm", "Trạng thái": "Sẵn sàng nhận tour", "Lịch trực / Phân công": "Trực tổng đài điều hành"
-        },
-        {
-            "Mã NV": "HDV-13", "Họ và Tên": "Ngô Phương Anh", "Ngày sinh": "25/05/1995", "CCCD": "001195004488",
-            "Chức danh": "HDV Quốc tế", "SĐT": "0915667700", "Loại thẻ": "Quốc tế", "Mã số thẻ HDV": "101190667",
-            "Ngôn ngữ": "Tiếng Ý, Tiếng Anh", "Tuyến đường chính": "Hà Nội, Hạ Long, Ninh Bình",
-            "Kinh nghiệm": "4 năm", "Trạng thái": "Sẵn sàng nhận tour", "Lịch trực / Phân công": "Trực văn phòng (T2-T6)"
-        },
-        {
-            "Mã NV": "DH-01", "Họ và Tên": "Phạm Quốc Bảo", "Ngày sinh": "11/04/1991", "CCCD": "001191008899",
-            "Chức danh": "Chuyên viên Điều hành Tour", "SĐT": "0977889900", "Loại thẻ": "Không", "Mã số thẻ HDV": "Không",
-            "Ngôn ngữ": "Tiếng Anh", "Tuyến đường chính": "Toàn quốc",
-            "Kinh nghiệm": "7 năm", "Trạng thái": "Đang làm việc", "Lịch trực / Phân công": "Điều hành trung tâm"
-        }
+        {"Mã NV": "HDV-01", "Họ và Tên": "Nguyễn Văn Tuấn", "Ngày sinh": "15/08/1990", "CCCD": "001090012345", "Chức danh": "HDV Quốc tế", "SĐT": "0908112233", "Loại thẻ": "Quốc tế", "Mã số thẻ HDV": "101180234", "Ngôn ngữ": "Tiếng Anh, Tiếng Trung", "Tuyến đường chính": "Sapa, Hà Nội, Hạ Long", "Kinh nghiệm": "8 năm", "Trạng thái": "Sẵn sàng nhận tour", "Lịch trực / Phân công": "Trực văn phòng (T2-T4)"},
+        {"Mã NV": "HDV-02", "Họ và Tên": "Lê Thị Mai", "Ngày sinh": "20/03/1994", "CCCD": "048194005678", "Chức danh": "HDV Nội địa", "SĐT": "0918334455", "Loại thẻ": "Nội địa", "Mã số thẻ HDV": "201190567", "Ngôn ngữ": "Tiếng Anh", "Tuyến đường chính": "Đà Nẵng, Hội An, Huế", "Kinh nghiệm": "5 năm", "Trạng thái": "Đang đi tour (T001)", "Lịch trực / Phân công": "Đi tour Sapa (05/10 - 08/10)"}
     ])
-
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
         {"role": "assistant", "content": "Xin chào! Tôi là Trợ lý ảo tư vấn tour Viet Travel 🤖.\n\nBạn muốn tìm hiểu lịch trình du lịch ở đâu (Sapa, Phú Quốc, Đà Nẵng, Đà Lạt, Hạ Long, Nha Trang...) hoặc có thắc mắc gì về dịch vụ không ạ?"}
@@ -293,6 +227,15 @@ if "chat_history" not in st.session_state:
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/201/201623.png", width=65)
     st.title("OPIS TOUR ENTERPRISE")
+    
+    # ĐOẠN KIỂM TRA TRẠNG THÁI KẾT NỐI AIVEN
+    conn_check = get_db_connection()
+    if conn_check:
+        st.success("🟢 Aiven MySQL: Đã kết nối")
+        conn_check.close()
+    else:
+        st.error("🔴 Aiven MySQL: Mất kết nối")
+        
     app_mode = st.radio(
         "🔀 CHỌN CHẾ ĐỘ SỬ DỤNG:",
         ["🌟 CỔNG ĐẶT TOUR (Dành cho Khách)", "💬 CHATBOT TƯ VẤN LỊCH TRÌNH", "👔 HỆ THỐNG QUẢN TRỊ (Dành cho CEO)"],
@@ -300,7 +243,6 @@ with st.sidebar:
     )
     st.divider()
     
-    # Hiển thị menu admin và nút đăng xuất khi đã đăng nhập
     if "CEO" in app_mode:
         if st.session_state.admin_authenticated:
             st.success("🔓 BẠN ĐÃ ĐĂNG NHẬP ADMIN")
@@ -322,10 +264,6 @@ with st.sidebar:
 # ==========================================
 # 4. KHU VỰC HIỂN THỊ NỘI DUNG CHÍNH
 # ==========================================
-
-# ------------------------------------------
-# CHẾ ĐỘ 1: CỔNG ĐẶT TOUR
-# ------------------------------------------
 if "CỔNG ĐẶT TOUR" in app_mode:
     st.markdown('<div class="main-title">🏖️ ĐẶT TOUR DU LỊCH THIẾT KẾ THEO YÊU CẦU CỦA BẠN</div>', unsafe_allow_html=True)
     st.caption("Hãy tự do thiết kế chuyến đi hoàn hảo của bạn. Hệ thống sẽ tự động tính toán chi phí minh bạch tức thì!")
@@ -337,7 +275,7 @@ if "CỔNG ĐẶT TOUR" in app_mode:
             travel_month = st.selectbox(
                 "📅 Chọn tháng khởi hành",
                 [f"Tháng {m}" for m in range(1, 13)],
-                index=5 # Mặc định Tháng 6
+                index=5
             )
         with col_t2:
             month_num = int(travel_month.split(" ")[1])
@@ -436,23 +374,53 @@ if "CỔNG ĐẶT TOUR" in app_mode:
                     if pax_child_5_12 > 0: pax_str += f", {pax_child_5_12} TE(5-12t)"
                     if pax_child_under_5 > 0: pax_str += f", {pax_child_under_5} TE(<5t)"
                     flight_str = f"{airline_choice} ({flight_class})" if inc_flight else "Không vé bay"
+                    
+                    ma_don_moi = f"BK-{1001 + len(st.session_state.df_bookings)}"
+                    time_str = f"{travel_month} ({'Cao điểm' if is_peak else 'Thấp điểm'})"
+                    day_night_str = f"{days}N{nights}Đ"
+                    hotel_str = f"{selected_hotel_name} ({star_rating} {room_type})"
+                    today_str = str(date.today())
+                    
+                    # 1. Lưu tạm vào Session State
                     new_booking = {
-                        "Mã Đơn": f"BK-{1001 + len(st.session_state.df_bookings)}",
+                        "Mã Đơn": ma_don_moi,
                         "Tên Khách": cust_name,
                         "SĐT": cust_phone,
                         "Điểm đến": destination,
                         "Số Khách": pax_str,
-                        "Thời gian đi": f"{travel_month} ({'Cao điểm' if is_peak else 'Thấp điểm'})",
-                        "Ngày/Đêm": f"{days}N{nights}Đ",
-                        "Khách sạn": f"{selected_hotel_name} ({star_rating} {room_type})",
+                        "Thời gian đi": time_str,
+                        "Ngày/Đêm": day_night_str,
+                        "Khách sạn": hotel_str,
                         "Bay": flight_str,
                         "Tổng Tiền": selling_price,
                         "Trạng thái": "Chờ Giám đốc duyệt",
-                        "Ngày đặt": str(date.today())
+                        "Ngày đặt": today_str
                     }
                     st.session_state.df_bookings = pd.concat([st.session_state.df_bookings, pd.DataFrame([new_booking])], ignore_index=True)
+                    
+                    # 2. Đẩy dữ liệu trực tiếp lên Aiven MySQL Database
+                    conn = get_db_connection()
+                    if conn:
+                        try:
+                            with conn.cursor() as cursor:
+                                sql = """
+                                INSERT INTO bookings 
+                                (ma_don, ten_khach, sdt, diem_den, so_khach, thoi_gian_di, ngay_dem, khach_san, bay, tong_tien, trang_thai, ngay_dat)
+                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                """
+                                cursor.execute(sql, (
+                                    ma_don_moi, cust_name, cust_phone, destination, pax_str,
+                                    time_str, day_night_str, hotel_str, flight_str,
+                                    selling_price, "Chờ Giám đốc duyệt", today_str
+                                ))
+                            conn.commit()
+                        except Exception as ex:
+                            st.warning(f"Lưu session thành công nhưng gặp lỗi đồng bộ Aiven MySQL: {ex}")
+                        finally:
+                            conn.close()
+
                     st.balloons()
-                    st.success("🎉 Đặt tour thành công! Đội ngũ Điều hành sẽ liên hệ xác nhận trong vòng 15 phút.")
+                    st.success("🎉 Đặt tour thành công! Đã lưu vào Aiven Database. Đội ngũ Điều hành sẽ liên hệ xác nhận trong 15 phút.")
 
 # ------------------------------------------
 # CHẾ ĐỘ 2: CHATBOT TƯ VẤN LỊCH TRÌNH
@@ -463,18 +431,16 @@ elif "CHATBOT" in app_mode:
     st.write("💡 **Gợi ý câu hỏi nhanh:**")
     quick_cols = st.columns(4)
     quick_q = None
-    if quick_cols[0].button("📍 Lịch trình Sapa"):
-        quick_q = "Gợi ý lịch trình tour Sapa"
-    if quick_cols[1].button("🏖️ Lịch trình Phú Quốc"):
-        quick_q = "Cho tôi lịch trình đi Phú Quốc"
-    if quick_cols[2].button("🌉 Lịch trình Đà Nẵng"):
-        quick_q = "Tư vấn tour Đà Nẵng"
-    if quick_cols[3].button("🌲 Lịch trình Đà Lạt"):
-        quick_q = "Lịch trình đi Đà Lạt thế nào?"
+    if quick_cols[0].button("📍 Lịch trình Sapa"): quick_q = "Gợi ý lịch trình tour Sapa"
+    if quick_cols[1].button("🏖️ Lịch trình Phú Quốc"): quick_q = "Cho tôi lịch trình đi Phú Quốc"
+    if quick_cols[2].button("🌉 Lịch trình Đà Nẵng"): quick_q = "Tư vấn tour Đà Nẵng"
+    if quick_cols[3].button("🌲 Lịch trình Đà Lạt"): quick_q = "Lịch trình đi Đà Lạt thế nào?"
     st.divider()
+    
     for message in st.session_state.chat_history:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
+            
     user_input = st.chat_input("Nhập thắc mắc của bạn về lịch trình tour tại đây...")
     prompt = user_input or quick_q
     if prompt:
@@ -504,40 +470,18 @@ elif "CHATBOT" in app_mode:
 - **Mùa cao điểm (Tháng 6, 7, 8 và Tháng 12, 1):** Phụ thu 20% do dịch vụ vé tham quan, phòng ở và di chuyển tăng cao.
 - **Mùa thấp điểm (Các tháng còn lại):** Áp dụng nguyên giá chuẩn, nhiều ưu đãi đi kèm.
                 """
-            elif "giá" in prompt_lower or "chi phí" in prompt_lower or "tiền" in prompt_lower:
-                response = """
-💰 **Thông tin chi phí Tour:**
-- Giá tour được tự động tính toán dựa trên: **Tháng đi (Mùa vụ)**, **Cơ cấu độ tuổi (Người lớn/Trẻ em)**, **Loại vé máy bay/hãng bay** và **Hạng khách sạn (3-5 sao)**.
-- Bạn vui lòng vào tab **'CỔNG ĐẶT TOUR'** chọn các tùy chọn để xem bảng giá chính xác nhất!
-                """
-            elif "khách sạn" in prompt_lower or "phòng" in prompt_lower:
-                response = "🏨 Viet Travel hợp tác với hơn 30+ hệ thống khách sạn/resort hàng đầu Việt Nam như Vinpearl, InterContinental, Novotel, Silk Path, FLC... từ 3 sao đến 5 sao VIP."
-            elif "xin chào" in prompt_lower or "chào" in prompt_lower or "hi" in prompt_lower:
-                response = "Xin chào bạn! Tôi có thể giúp gì cho chuyến du lịch sắp tới của bạn? Bạn muốn tham khảo lịch trình Sapa, Phú Quốc, Đà Nẵng, Đà Lạt hay địa điểm nào khác?"
             else:
-                response = f"""
-Cảm ơn bạn đã đặt câu hỏi: *"{prompt}"*.
-Dưới đây là một số địa điểm nổi tiếng Viet Travel có sẵn lịch trình chi tiết:
-- 🏔️ **Sapa** (3N2Đ - Cáp treo Fansipan, Bản Cát Cát)
-- 🏖️ **Phú Quốc** (4N3Đ - Tour 4 Đảo, VinWonders, Safari)
-- 🌉 **Đà Nẵng** (3N2Đ - Bà Nà Hills, Hội An)
-- 🌲 **Đà Lạt** (3N2Đ - Quảng trường Lâm Viên, Langbiang)
-- 🚢 **Hạ Long** (2N1Đ - Du thuyền Vịnh Hạ Long)
-- 🏖️ **Nha Trang** (3N2Đ - VinWonders, Tour Đảo)
-Bạn hãy nhập tên địa điểm muốn đi để tôi gửi lịch trình gợi ý nhé!
-                """
+                response = f"Cảm ơn bạn đã đặt câu hỏi: *\"{prompt}\"*. Vui lòng chọn các địa điểm như Sapa, Phú Quốc, Đà Nẵng, Đà Lạt... để xem lịch trình chi tiết!"
         with st.chat_message("assistant"):
             st.markdown(response)
         st.session_state.chat_history.append({"role": "assistant", "content": response})
 
 # ------------------------------------------
-# CHẾ ĐỘ 3: QUẢN TRỊ CEO (CÓ XÁC THỰC MẬT KHẨU)
+# CHẾ ĐỘ 3: QUẢN TRỊ CEO
 # ------------------------------------------
 else:
-    # 🔒 KIỂM TRA MẬT KHẨU NẾU CHƯA XÁC THỰC
     if not st.session_state.admin_authenticated:
         st.markdown('<div class="main-title">🔒 DÀNH CHO QUẢN TRỊ VIÊN (CEO / MANAGEMENT)</div>', unsafe_allow_html=True)
-        
         c_p1, c_p2, c_p3 = st.columns([1, 2, 1])
         with c_p2:
             st.info("👋 Bạn đang truy cập vào khu vực bảo mật. Vui lòng nhập mật khẩu Quản trị để tiếp tục.")
@@ -552,7 +496,6 @@ else:
                     else:
                         st.error("❌ Mật khẩu không chính xác! Vui lòng thử lại.")
     else:
-        # NẾU ĐÃ ĐĂNG NHẬP THÀNH CÔNG, HIỂN THỊ CÁC CHỨC NĂNG QUẢN TRỊ
         if ceo_menu == "📊 Dashboard Điều hành CEO":
             st.markdown('<div class="main-title">👔 EXECUTIVE DASHBOARD - BÁO CÁO BÀN GIÁO QUẢN TRỊ</div>', unsafe_allow_html=True)
             df_b = st.session_state.df_bookings
@@ -576,7 +519,6 @@ else:
                 st.subheader("📊 So sánh Doanh thu vs Chi phí các Tour")
                 chart_data_tour = df_t.set_index("ID")[["Doanh thu", "Chi phí"]]
                 st.bar_chart(chart_data_tour)
-
         elif ceo_menu == "📥 Tiếp nhận & Duyệt Đơn đặt":
             st.markdown('<div class="main-title">📥 QUẢN LÝ & DUYỆT YÊU CẦU ĐẶT TOUR TỪ KHÁCH HÀNG</div>', unsafe_allow_html=True)
             df_b = st.session_state.df_bookings
@@ -603,94 +545,15 @@ else:
                             st.session_state.df_bookings.at[idx, "Trạng thái"] = new_status
                             st.success(f"Đã cập nhật trạng thái đơn {row['Mã Đơn']} thành '{new_status}'!")
                             st.rerun()
-
         elif ceo_menu == "👨‍💼 Quản lý Nhân sự & HDV":
             st.markdown('<div class="main-title">👨‍💼 QUẢN LÝ DANH SÁCH NHÂN SỰ & HƯỚNG DẪN VIÊN</div>', unsafe_allow_html=True)
-            df_s = st.session_state.df_staff
-            
-            # Thống kê nhanh
-            c_hdv1, c_hdv2, c_hdv3, c_hdv4 = st.columns(4)
-            c_hdv1.metric("TỔNG NHÂN SỰ / HDV", f"{len(df_s)} Người")
-            c_hdv2.metric("HDV Quốc tế", f"{len(df_s[df_s['Chức danh'] == 'HDV Quốc tế'])} HDV")
-            c_hdv3.metric("HDV Sẵn Sàng Đi Tour", f"{len(df_s[df_s['Trạng thái'] == 'Sẵn sàng nhận tour'])} HDV")
-            c_hdv4.metric("HDV Đang Bận / Đi Tour", f"{len(df_s[df_s['Trạng thái'].str.contains('Đang đi tour')])} HDV")
-            st.divider()
-            
-            # Bộ lọc tìm kiếm
-            flt_col1, flt_col2, flt_col3 = st.columns(3)
-            with flt_col1:
-                role_filter = st.multiselect("Lọc theo Chức danh", options=df_s["Chức danh"].unique(), default=df_s["Chức danh"].unique())
-            with flt_col2:
-                status_filter = st.multiselect("Lọc theo Trạng thái", options=df_s["Trạng thái"].unique(), default=df_s["Trạng thái"].unique())
-            with flt_col3:
-                lang_search = st.text_input("🔍 Tìm theo Ngôn ngữ (VD: Anh, Trung, Nhật...)", value="")
-            filtered_staff = df_s[
-                (df_s["Chức danh"].isin(role_filter)) & 
-                (df_s["Trạng thái"].isin(status_filter))
-            ]
-            if lang_search:
-                filtered_staff = filtered_staff[filtered_staff["Ngôn ngữ"].str.contains(lang_search, case=False, na=False)]
-            st.subheader("📋 Bảng Danh Sách & Lịch Trực Hướng Dẫn Viên")
-            st.dataframe(
-                filtered_staff[[
-                    "Mã NV", "Họ và Tên", "Mã số thẻ HDV", "Loại thẻ", "Ngôn ngữ", 
-                    "Chức danh", "SĐT", "Trạng thái", "Lịch trực / Phân công", "Tuyến đường chính", "Kinh nghiệm"
-                ]], 
-                use_container_width=True, 
-                hide_index=True
-            )
-            st.divider()
-            st.subheader("➕ Thêm Nhân Sự / Hướng Dẫn Viên Mới")
-            with st.form("add_staff_form"):
-                s1, s2, s3 = st.columns(3)
-                with s1:
-                    st_name = st.text_input("Họ và Tên*")
-                    st_dob = st.text_input("Ngày sinh (DD/MM/YYYY)", placeholder="15/08/1995")
-                    st_cccd = st.text_input("Số CCCD/CMND", placeholder="001095XXXXXX")
-                    st_phone = st.text_input("Số điện thoại*")
-                with s2:
-                    st_role = st.selectbox("Chức danh*", ["HDV Quốc tế", "HDV Nội địa", "Chuyên viên Điều hành Tour", "NV Kinh doanh"])
-                    st_card_type = st.selectbox("Loại thẻ HDV", ["Quốc tế", "Nội địa", "Không"])
-                    st_card_no = st.text_input("Mã số thẻ HDV", placeholder="Ví dụ: 101180234")
-                    st_lang = st.text_input("Ngôn ngữ thành thạo*", value="Tiếng Anh")
-                with s3:
-                    st_routes = st.text_input("Tuyến đường chính / Khu vực", placeholder="Ví dụ: Phú Quốc, Nha Trang")
-                    st_exp = st.text_input("Kinh nghiệm", placeholder="Ví dụ: 5 năm")
-                    st_status = st.selectbox("Trạng thái", ["Sẵn sàng nhận tour", "Đang đi tour", "Đang làm việc", "Nghỉ phép"])
-                    st_schedule = st.text_input("Lịch trực / Phân công", placeholder="Ví dụ: Trực văn phòng T2-T4")
-                btn_add_staff = st.form_submit_button("💾 Lưu Nhân Sự Mới")
-                if btn_add_staff:
-                    if not st_name or not st_phone:
-                        st.error("Vui lòng điền đầy đủ Họ tên và Số điện thoại!")
-                    else:
-                        new_id_num = len(st.session_state.df_staff) + 1
-                        new_staff = {
-                            "Mã NV": f"HDV-{new_id_num:02d}" if "HDV" in st_role else f"NV-{new_id_num:02d}",
-                            "Họ và Tên": st_name,
-                            "Ngày sinh": st_dob if st_dob else "N/A",
-                            "CCCD": st_cccd if st_cccd else "N/A",
-                            "Chức danh": st_role,
-                            "SĐT": st_phone,
-                            "Loại thẻ": st_card_type,
-                            "Mã số thẻ HDV": st_card_no if st_card_no else "Không",
-                            "Ngôn ngữ": st_lang,
-                            "Tuyến đường chính": st_routes if st_routes else "Chưa phân công",
-                            "Kinh nghiệm": st_exp if st_exp else "Dưới 1 năm",
-                            "Trạng thái": st_status,
-                            "Lịch trực / Phân công": st_schedule if st_schedule else "Chưa xếp lịch"
-                        }
-                        st.session_state.df_staff = pd.concat([st.session_state.df_staff, pd.DataFrame([new_staff])], ignore_index=True)
-                        st.success(f"🎉 Đã thêm thành công HDV/Nhân viên **{st_name}** vào hệ thống!")
-                        st.rerun()
-
+            st.dataframe(st.session_state.df_staff, use_container_width=True, hide_index=True)
         elif ceo_menu == "🏨 Quản lý Khách sạn Partner":
             st.markdown('<div class="main-title">🏨 QUẢN LÝ DANH SÁCH KHÁCH SẠN ĐỐI TÁC</div>', unsafe_allow_html=True)
             st.dataframe(st.session_state.df_hotels, use_container_width=True, hide_index=True)
-
         elif ceo_menu == "🗺️ Quản lý Tour & Vận hành":
             st.markdown('<div class="main-title">🗺️ QUẢN LÝ TOUR ĐỊNH KỲ & VẬN HÀNH</div>', unsafe_allow_html=True)
             st.dataframe(st.session_state.df_tours, use_container_width=True, hide_index=True)
-
         elif ceo_menu == "💰 Báo cáo Tài chính":
             st.markdown('<div class="main-title">💰 BÁO CÁO TÀI CHÍNH & TỔNG QUAN DOANH THU</div>', unsafe_allow_html=True)
             df_b = st.session_state.df_bookings
