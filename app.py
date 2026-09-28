@@ -669,6 +669,14 @@ else:
             pending_orders = len(df_b[df_b["Trạng thái"] == "Chờ Giám đốc duyệt"]) if not df_b.empty else 0
             
             k1, k2, k3, k4 = st.columns(4)
+            # Đảm bảo grand_total_rev là số, nếu None hoặc lỗi thì gán bằng 0
+try:
+    val_rev = float(grand_total_rev) if grand_total_rev is not None else 0.0
+except (ValueError, TypeError):
+    val_rev = 0.0
+
+# Sau đó dùng val_rev để truyền vào st.metric / k1.metric
+k1.metric("TỔNG DOANH THU TOÀN CÔNG TY", f"{val_rev:,.0f} VNĐ", delta="+2...")
             k1.metric("TỔNG DOANH THU TOÀN CÔNG TY", f"{grand_total_rev:,.0f} VNĐ", delta="+22.4% Tăng trưởng")
             k2.metric("Doanh thu Tour Khách Tự Thiết Kế", f"{total_custom_rev:,.0f} VNĐ", delta=f"{len(df_b)} Đơn hàng")
             k3.metric("Doanh thu Tour Ghép Định Kỳ", f"{total_tour_rev:,.0f} VNĐ", delta=f"{len(df_t)} Tour đang chạy")
