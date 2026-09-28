@@ -8,15 +8,16 @@ from google import genai
 # ==========================================
 # CẤU HÌNH GEMINI API (SDK MỚI: google-genai)
 # ==========================================
+# Thay chuỗi AIzaSy... bên dưới bằng Gemini API Key hợp lệ của bạn
 GEMINI_API_KEY = "AQ.Ab8RN6Im4364rpP31Dyfxf1h6utzE7Yrouc2hIDpr3GySRYFjg" 
 
 client = None
-if GEMINI_API_KEY:
+if GEMINI_API_KEY and GEMINI_API_KEY.startswith("AIzaSy"):
     try:
         client = genai.Client(api_key=GEMINI_API_KEY)
     except Exception as e:
         st.error(f"❌ Lỗi khởi tạo Gemini Client: {e}")
-
+        
 # ==========================================
 # CẤU HÌNH BẢO MẬT ADMIN & KẾT NỐI DATABASE AIVEN
 # ==========================================
@@ -469,10 +470,10 @@ elif "CHATBOT" in app_mode:
                 
                 try:
                     if client:
-                        response = client.models.generate_content(
-                            model='gemini-2.5-flash', 
-                            contents=conversation_context
-                        )
+                       response = client.models.generate_content(
+    model='gemini-2.5-flash',  # Hoặc 'gemini-1.5-flash'
+    contents=conversation_context
+)
                         ai_response = response.text
                     else:
                         ai_response = "⚠️ Chưa cấu hình Gemini API Key hoặc khởi tạo Client không thành công."
