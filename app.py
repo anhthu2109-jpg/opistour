@@ -301,7 +301,7 @@ with st.sidebar:
 if "CỔNG ĐẶT TOUR" in app_mode:
     st.markdown('<div class="main-title">🏖️ ĐẶT TOUR DU LỊCH THIẾT KẾ THEO YÊU CẦU CỦA BẠN</div>', unsafe_allow_html=True)
     st.image(
-        "banner.jpg", 
+        "banner.jpeg", 
         caption="Opis Tour - Đồng hành cùng bạn trên mọi hành trình",
         use_container_width=True
     )
