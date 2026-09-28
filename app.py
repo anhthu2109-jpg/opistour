@@ -234,7 +234,7 @@ if 'df_staff' not in st.session_state:
     ])
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
-        {"role": "assistant", "content": "Xin chào! Tôi là Trợ lý ảo tư vấn tour Viet Travel 🤖.\n\nBạn muốn tìm hiểu lịch trình du lịch ở đâu (Sapa, Phú Quốc, Đà Nẵng, Đà Lạt, Hạ Long, Nha Trang...) hoặc có thắc mắc gì về dịch vụ không ạ?"}
+        {"role": "assistant", "content": "Xin chào! Tôi là Trợ lý ảo tư vấn tour Opis Tour 🤖.\n\nBạn muốn tìm hiểu lịch trình du lịch ở đâu (Sapa, Phú Quốc, Đà Nẵng, Đà Lạt, Hạ Long, Nha Trang...) hoặc có thắc mắc gì về dịch vụ không ạ?"}
     ]
 
 # ==========================================
@@ -511,7 +511,7 @@ elif "CHATBOT" in app_mode:
         # 6. Bắt từ khóa về Chính sách giá / Trẻ em / Mùa vụ
         elif not found_match and any(k in prompt_lower for k in ["trẻ em", "tuổi", "giá trẻ em", "em bé"]):
             response = """
-👶 **Chính sách giá tour theo độ tuổi tại Viet Travel:**
+👶 **Chính sách giá tour theo độ tuổi tại Opis Tour:**
 - **Dưới 5 tuổi:** Miễn phí 100% giá dịch vụ tour.
 - **Từ 5 đến dưới 12 tuổi:** Tính 50% giá dịch vụ tour.
 - **Từ 12 tuổi trở lên:** Tính như người lớn (100% giá).
