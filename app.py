@@ -4,11 +4,18 @@ from datetime import datetime, date
 import math
 import pymysql
 
+# Import thư viện Gemini SDK mới nhất ở đầu file để tránh SyntaxError
+try:
+    from google import genai
+    from google.genai import types
+    GEMINI_AVAILABLE = True
+except ImportError:
+    GEMINI_AVAILABLE = False
+
 # ==========================================
 # CẤU HÌNH BẢO MẬT ADMIN & KẾT NỐI DATABASE AIVEN
 # ==========================================
 ADMIN_PASSWORD = "admin123"
-
 DB_HOST = "mysql-1cc70107-anhthutran21092005-5a1e.h.aivencloud.com"
 DB_PORT = 12023
 DB_USER = "avnadmin"
@@ -228,7 +235,7 @@ with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/201/201623.png", width=65)
     st.title("OPIS TOUR ENTERPRISE")
     
-    # ĐOẠN KIỂM TRA TRẠNG THÁI KẾT NỐI AIVEN
+    # Kiểm tra trạng thái kết nối Aiven
     conn_check = get_db_connection()
     if conn_check:
         st.success("🟢 Aiven MySQL: Đã kết nối")
@@ -243,6 +250,10 @@ with st.sidebar:
     )
     st.divider()
     
+    if "CHATBOT" in app_mode:
+        st.subheader("🔑 Cấu hình Chatbot AI")
+        api_key_input = st.text_input("Nhập Gemini API Key", type="password", help="Lấy API Key miễn phí tại aistudio.google.com")
+        
     if "CEO" in app_mode:
         if st.session_state.admin_authenticated:
             st.success("🔓 BẠN ĐÃ ĐĂNG NHẬP ADMIN")
@@ -381,7 +392,6 @@ if "CỔNG ĐẶT TOUR" in app_mode:
                     hotel_str = f"{selected_hotel_name} ({star_rating} {room_type})"
                     today_str = str(date.today())
                     
-                    # 1. Lưu tạm vào Session State
                     new_booking = {
                         "Mã Đơn": ma_don_moi,
                         "Tên Khách": cust_name,
@@ -398,7 +408,6 @@ if "CỔNG ĐẶT TOUR" in app_mode:
                     }
                     st.session_state.df_bookings = pd.concat([st.session_state.df_bookings, pd.DataFrame([new_booking])], ignore_index=True)
                     
-                    # 2. Đẩy dữ liệu trực tiếp lên Aiven MySQL Database
                     conn = get_db_connection()
                     if conn:
                         try:
@@ -418,38 +427,35 @@ if "CỔNG ĐẶT TOUR" in app_mode:
                             st.warning(f"Lưu session thành công nhưng gặp lỗi đồng bộ Aiven MySQL: {ex}")
                         finally:
                             conn.close()
-
                     st.balloons()
                     st.success("🎉 Đặt tour thành công! Đã lưu vào Aiven Database. Đội ngũ Điều hành sẽ liên hệ xác nhận trong 15 phút.")
 
 # ------------------------------------------
-# CHẾ ĐỘ 2: CHATBOT TƯ VẤN LỊCH TRÌNH THÔNG MINH (GEMINI AI INTEGRATED)
+# CHẾ ĐỘ 2: CHATBOT TƯ VẤN LỊCH TRÌNH THÔNG MINH
 # ------------------------------------------
 elif "CHATBOT" in app_mode:
-    st.markdown('<div class="main-title">💬 CHATBOT TƯ VẤN LỊCH TRÌNH & DỊCH VỤ TOUR NÂNG CẤP AI</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">💬 CHATBOT TƯ VẤN LỊCH TRÌNH & DỊCH VỤ TOUR (NÂNG CẤP AI)</div>', unsafe_allow_html=True)
     st.caption("Trợ lý AI Gemini thông minh sẵn sàng tư vấn chi tiết, linh hoạt và chuyên sâu 24/7.")
     
-    # 1. Cấu hình API Key (Lấy từ st.secrets hoặc cho phép người dùng nhập)
-    api_key = st.secrets.get("GEMINI_API_KEY", None)
-    
-    with st.sidebar:
-        st.subheader("🔑 Cấu hình Chatbot AI")
-        if not api_key:
-            api_key = st.text_input("Nhập Gemini API Key", type="password", help="Lấy API Key miễn phí tại Google AI Studio")
-        else:
-            st.success("🟢 API Key Gemini đã được tải!")
+    # Lấy API Key từ Secrets hoặc thanh Sidebar
+    api_key = st.secrets.get("GEMINI_API_KEY", "") or ('api_key_input' in locals() and api_key_input) or ""
+    clean_api_key = api_key.strip()
 
     st.write("💡 **Gợi ý câu hỏi nhanh:**")
     quick_cols = st.columns(4)
     quick_q = None
-    if quick_cols[0].button("📍 Tour Sapa 3N2Đ thích hợp cho ai?"): quick_q = "Tour Sapa 3N2Đ thích hợp cho đối tượng nào và có điểm gì đặc sắc?"
-    if quick_cols[1].button("🏖️ Đi Phú Quốc mùa nào đẹp nhất?"): quick_q = "Nên đi Phú Quốc vào tháng mấy và cần lưu ý gì về chi phí?"
-    if quick_cols[2].button("🌉 Tư vấn tour Đà Nẵng có trẻ em"): quick_q = "Nhà mình có 2 người lớn và 1 trẻ em 6 tuổi, tư vấn tour Đà Nẵng 3N2Đ phù hợp với!"
-    if quick_cols[3].button("🌲 So sánh Đà Lạt và Sapa"): quick_q = "Nên chọn đi Đà Lạt hay Sapa cho kỳ nghỉ gia đình?"
+    if quick_cols[0].button("📍 Tour Sapa 3N2Đ thích hợp cho ai?"): 
+        quick_q = "Tour Sapa 3N2Đ thích hợp cho đối tượng nào và có điểm gì đặc sắc?"
+    if quick_cols[1].button("🏖️ Đi Phú Quốc mùa nào đẹp nhất?"): 
+        quick_q = "Nên đi Phú Quốc vào tháng mấy và cần lưu ý gì về chi phí?"
+    if quick_cols[2].button("🌉 Tư vấn tour Đà Nẵng có trẻ em"): 
+        quick_q = "Nhà mình có 2 người lớn và 1 trẻ em 6 tuổi, tư vấn tour Đà Nẵng 3N2Đ phù hợp với!"
+    if quick_cols[3].button("🌲 So sánh Đà Lạt và Sapa"): 
+        quick_q = "Nên chọn đi Đà Lạt hay Sapa cho kỳ nghỉ gia đình?"
 
     st.divider()
 
-    # Hiển thị lịch sử chat
+    # Hiển thị lịch sử trò chuyện
     for message in st.session_state.chat_history:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
@@ -458,36 +464,25 @@ elif "CHATBOT" in app_mode:
     prompt = user_input or quick_q
 
     if prompt:
-        # Thêm câu hỏi người dùng vào lịch sử
         st.session_state.chat_history.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        # Xử lý phản hồi AI
         with st.chat_message("assistant"):
-            if not api_key:
-                response = "⚠️ **Chưa cấu hình API Key:** Vui lòng nhập Gemini API Key ở thanh bên trái (Sidebar) hoặc thêm `GEMINI_API_KEY` vào Streamlit Secrets để sử dụng tính năng tư vấn AI thông minh!"
+            if not clean_api_key:
+                response = "⚠️ **Chưa cấu hình API Key:** Vui lòng nhập Gemini API Key ở thanh bên trái (Sidebar) hoặc thêm `GEMINI_API_KEY` vào Streamlit Secrets!"
                 st.warning(response)
+            elif not GEMINI_AVAILABLE:
+                response = "❌ Chưa cài đặt thư viện `google-genai`. Vui lòng thêm `google-genai` vào file `requirements.txt`!"
+                st.error(response)
             else:
                 with st.spinner("🤖 Trợ lý AI đang soạn câu trả lời chi tiết cho bạn..."):
                     try:
-                        from google import genai
-from google.genai import types
+                        client = genai.Client(api_key=clean_api_key)
 
-# Tự động làm sạch khoảng trắng thừa nếu có
-clean_api_key = api_key.strip() if api_key else ""
-
-if not clean_api_key:
-    st.warning("⚠️ Chưa cấu hình API Key: Vui lòng nhập Gemini API Key ở thanh bên trái (Sidebar) hoặc thêm GEMINI_API_KEY vào Streamlit Secrets!")
-else:
-    with st.spinner("🤖 Trợ lý AI đang soạn câu trả lời chi tiết cho bạn..."):
-        try:
-            # Khởi tạo Client với API Key đã làm sạch
-            client = genai.Client(api_key=clean_api_key)
-
-            hotels_summary = st.session_state.df_hotels.to_string(index=False)
-            
-            system_instruction = f"""
+                        hotels_summary = st.session_state.df_hotels.to_string(index=False)
+                        
+                        system_instruction = f"""
 Bạn là Trợ lý Chuyên viên Tư vấn Du lịch Cao cấp của công ty Opis Tour Enterprise.
 Nhiệm vụ của bạn là tư vấn cho khách hàng về các tour du lịch, lịch trình, mẹo du lịch, ẩm thực, lưu trú và dự toán chi phí một cách thân thiện, chuyên nghiệp, hấp dẫn, không dập khuôn máy móc.
 
@@ -507,49 +502,46 @@ DƯỚI ĐÂY LÀ DỮ LIỆU NỘI BỘ CỦA OPIS TOUR:
 - Mùa vụ: Tháng 6, 7, 8 & 12, 1 là Cao điểm (+20% phụ thu).
 
 QUY TẮC PHẢN HỒI:
-- Trả lời bằng tiếng Việt tự nhiên, cuốn hút, giàu cảm xúc, sinh động.
-- Trình bày sinh động bằng Emoji, phân chia từng ngày rõ ràng.
-- Gợi ý khách sang tab 'CỔNG ĐẶT TOUR' ở thanh bên trái nếu muốn báo giá tự động.
+- Trả lời bằng tiếng Việt tự nhiên, cuốn hút, sinh động, dùng Emoji hợp lý.
+- Dựa trên dữ liệu nội bộ để tư vấn chính xác, nhưng linh hoạt điều chỉnh theo nhu cầu riêng của khách.
+- Gợi ý khách sang tab 'CỔNG ĐẶT TOUR' ở thanh bên trái nếu khách muốn nhận báo giá tự động chính xác.
 """
 
-            # Xây dựng nội dung hội thoại
-            contents = []
-            for msg in st.session_state.chat_history[:-1]:
-                role = "user" if msg["role"] == "user" else "model"
-                contents.append(
-                    types.Content(
-                        role=role,
-                        parts=[types.Part.from_text(text=msg["content"])]
-                    )
-                )
-            
-            contents.append(
-                types.Content(
-                    role="user",
-                    parts=[types.Part.from_text(text=prompt)]
-                )
-            )
+                        contents = []
+                        for msg in st.session_state.chat_history[:-1]:
+                            role = "user" if msg["role"] == "user" else "model"
+                            contents.append(
+                                types.Content(
+                                    role=role,
+                                    parts=[types.Part.from_text(text=msg["content"])]
+                                )
+                            )
+                        
+                        contents.append(
+                            types.Content(
+                                role="user",
+                                parts=[types.Part.from_text(text=prompt)]
+                            )
+                        )
 
-            # Gọi Gemini API 2.5 Flash
-            ai_response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=contents,
-                config=types.GenerateContentConfig(
-                    system_instruction=system_instruction,
-                    temperature=0.7,
-                )
-            )
-            
-            response = ai_response.text
-            st.markdown(response)
+                        ai_response = client.models.generate_content(
+                            model="gemini-2.5-flash",
+                            contents=contents,
+                            config=types.GenerateContentConfig(
+                                system_instruction=system_instruction,
+                                temperature=0.7,
+                            )
+                        )
+                        
+                        response = ai_response.text
+                        st.markdown(response)
 
-        except Exception as e:
-            response = f"❌ Đã xảy ra lỗi khi kết nối với AI: {str(e)}\nVui lòng kiểm tra lại API Key hoặc kết nối mạng."
-            st.error(response)
+                    except Exception as e:
+                        response = f"❌ Đã xảy ra lỗi khi kết nối với AI: {str(e)}\nVui lòng kiểm tra lại API Key hoặc kết nối mạng."
+                        st.error(response)
 
-        # Lưu câu trả lời vào Session State
         st.session_state.chat_history.append({"role": "assistant", "content": response})
-            
+
 # ------------------------------------------
 # CHẾ ĐỘ 3: QUẢN TRỊ CEO
 # ------------------------------------------
