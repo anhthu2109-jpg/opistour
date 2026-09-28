@@ -430,7 +430,7 @@ elif "CHATBOT" in app_mode:
     st.caption("Trợ lý AI Gemini thông minh sẵn sàng tư vấn chi tiết, linh hoạt và chuyên sâu 24/7.")
     
     # 1. Cấu hình API Key (Lấy từ st.secrets hoặc cho phép người dùng nhập)
-    api_key = st.secrets.get("GEMINI_API_KEY", None)
+    api_key = st.secrets.get("AQ.Ab8RN6Im4364rpP31Dyfxf1h6utzE7Yrouc2hIDpr3GySRYFjg", None)
     
     with st.sidebar:
         st.subheader("🔑 Cấu hình Chatbot AI")
