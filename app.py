@@ -190,7 +190,22 @@ ITINERARY_DATABASE = {
 - **Ngày 3:** Tour lặn biển Hòn Mun / Đảo Yến -> Mua yến sào, nem nướng -> Tiễn khách.
     """
 }
-
+CONSULTING_DATABASE = {
+    "nhu cau": """
+💡 **Tư vấn lựa chọn điểm đến theo nhu cầu của bạn:**
+- **Nghỉ dưỡng sang trọng, biển đẹp:** Phú Quốc, Nha Trang, Quy Nhơn (Phù hợp gia đình, cặp đôi).
+- **Khám phá thiên nhiên, săn mây, khí hậu mát mẻ:** Sapa, Đà Lạt.
+- **Văn hóa, ẩm thực & check-in sôi động:** Đà Nẵng - Hội An, Hà Nội.
+- **Chuyến đi ngắn ngày (2N1Đ):** Hạ Long (đi du thuyền), Tam Đảo, Ba Vì.
+    """,
+    "duong di": """
+🚗 **Tư vấn đường đi & Phương tiện di chuyển phổ biến:**
+- **Sapa:** Đi xe giường nằm VIP / Xe Limousine từ Hà Nội (khoảng 5-6 tiếng qua cao tốc Hà Nội - Lào Cai).
+- **Phú Quốc:** Bay thẳng đến Sân bay Quốc tế Phú Quốc (PQC) từ Hà Nội/TP.HCM/Đà Nẵng.
+- **Đà Nẵng / Nha Trang:** Bay thẳng đến Sân bay Đà Nẵng (DAD) hoặc Cam Ranh (CXR), hoặc đi tàu hỏa Bắc - Nam.
+- **Đà Lạt:** Bay đến Sân bay Liên Khương (DLI) cách trung tâm 30km, hoặc đi xe Limousine từ TP.HCM (khoảng 6-8 tiếng).
+    """
+}
 TRANSPORT_RATES = {
     "Phú Quốc": 1200000, "Đà Nẵng": 1000000, "Hà Nội": 900000, "Sapa": 1500000,
     "Nha Trang": 1100000, "Đà Lạt": 1300000, "Hạ Long": 1200000, "Quy Nhơn": 1200000, "TP. Hồ Chí Minh": 1000000
@@ -431,10 +446,10 @@ elif "CHATBOT" in app_mode:
     st.write("💡 **Gợi ý câu hỏi nhanh:**")
     quick_cols = st.columns(4)
     quick_q = None
-    if quick_cols[0].button("📍 Lịch trình Sapa"): quick_q = "Gợi ý lịch trình tour Sapa"
-    if quick_cols[1].button("🏖️ Lịch trình Phú Quốc"): quick_q = "Cho tôi lịch trình đi Phú Quốc"
-    if quick_cols[2].button("🌉 Lịch trình Đà Nẵng"): quick_q = "Tư vấn tour Đà Nẵng"
-    if quick_cols[3].button("🌲 Lịch trình Đà Lạt"): quick_q = "Lịch trình đi Đà Lạt thế nào?"
+    if quick_cols[0].button("📍 Tư vấn chọn điểm đến"): quick_q = "Tôi nên đi đâu du lịch?"
+    if quick_cols[1].button("🚗 Tư vấn đường đi / di chuyển"): quick_q = "Hướng dẫn đường đi và phương tiện di chuyển"
+    if quick_cols[2].button("🏖️ Lịch trình Phú Quốc"): quick_q = "Cho tôi lịch trình đi Phú Quốc"
+    if quick_cols[3].button("🌲 Lịch trình Sapa"): quick_q = "Gợi ý lịch trình tour Sapa"
     st.divider()
     
     for message in st.session_state.chat_history:
@@ -449,29 +464,51 @@ elif "CHATBOT" in app_mode:
             st.markdown(prompt)
         prompt_lower = prompt.lower()
         response = ""
-        found_destination = False
+        found_match = False
+        
+        # 1. Kiểm tra tư vấn lịch trình theo địa điểm
         for loc_key, itinerary in ITINERARY_DATABASE.items():
             if loc_key in prompt_lower:
                 response = f"Dưới đây là gợi ý lịch trình chi tiết cho chuyến đi **{loc_key.upper()}** của bạn:\n" + itinerary
                 response += "\n\n👉 Bạn có thể chuyển sang tab **'CỔNG ĐẶT TOUR'** ở thanh bên trái để chọn tháng đi, độ tuổi trẻ em, hãng máy bay và nhận báo giá trọn gói tự động nhé!"
-                found_destination = True
+                found_match = True
                 break
-        if not found_destination:
-            if "trẻ em" in prompt_lower or "tuổi" in prompt_lower or "giá trẻ em" in prompt_lower:
+        
+        # 2. Kiểm tra tư vấn nhu cầu du lịch
+        if not found_match and any(k in prompt_lower for k in ["nhu cầu", "tư vấn đi đâu", "nên đi đâu", "gợi ý điểm đến", "chưa biết đi đâu"]):
+            response = CONSULTING_DATABASE["nhu cau"]
+            found_match = True
+
+        # 3. Kiểm tra tư vấn đường đi & phương tiện
+        if not found_match and any(k in prompt_lower for k in ["đường đi", "phương tiện", "di chuyển", "đi bằng gì", "xe gì", "sân bay"]):
+            response = CONSULTING_DATABASE["duong di"]
+            found_match = True
+
+        # 4. Kiểm tra các câu hỏi về chính sách
+        if not found_match:
+            if any(k in prompt_lower for k in ["trẻ em", "tuổi", "giá trẻ em", "em bé"]):
                 response = """
 👶 **Chính sách giá tour theo độ tuổi tại Viet Travel:**
 - **Dưới 5 tuổi:** Miễn phí 100% giá dịch vụ tour.
 - **Từ 5 đến dưới 12 tuổi:** Tính 50% giá dịch vụ tour.
 - **Từ 12 tuổi trở lên:** Tính như người lớn (100% giá).
                 """
-            elif "mùa" in prompt_lower or "cao điểm" in prompt_lower or "tháng" in prompt_lower:
+            elif any(k in prompt_lower for k in ["mùa", "cao điểm", "thấp điểm", "tháng"]):
                 response = """
 📅 **Chính sách Mùa vụ Du lịch:**
 - **Mùa cao điểm (Tháng 6, 7, 8 và Tháng 12, 1):** Phụ thu 20% do dịch vụ vé tham quan, phòng ở và di chuyển tăng cao.
 - **Mùa thấp điểm (Các tháng còn lại):** Áp dụng nguyên giá chuẩn, nhiều ưu đãi đi kèm.
                 """
             else:
-                response = f"Cảm ơn bạn đã đặt câu hỏi: *\"{prompt}\"*. Vui lòng chọn các địa điểm như Sapa, Phú Quốc, Đà Nẵng, Đà Lạt... để xem lịch trình chi tiết!"
+                response = (
+                    f"Cảm ơn bạn đã đặt câu hỏi: *\"{prompt}\"*.\n\n"
+                    "🤖 **Tôi có thể hỗ trợ bạn các thông tin sau:**\n"
+                    "- **Tư vấn nhu cầu:** Gợi ý điểm đến phù hợp theo sở thích.\n"
+                    "- **Đường đi & Di chuyển:** Hướng dẫn phương tiện đến Sapa, Phú Quốc, Đà Nẵng, Đà Lạt...\n"
+                    "- **Lịch trình chi tiết:** Lịch trình 2N1Đ, 3N2Đ, 4N3Đ tại các điểm hot.\n"
+                    "- **Chính sách:** Giá trẻ em, phụ thu mùa cao điểm."
+                )
+
         with st.chat_message("assistant"):
             st.markdown(response)
         st.session_state.chat_history.append({"role": "assistant", "content": response})
