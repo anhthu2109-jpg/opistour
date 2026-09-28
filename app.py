@@ -8,7 +8,6 @@ import pymysql
 # CẤU HÌNH BẢO MẬT ADMIN & KẾT NỐI DATABASE AIVEN
 # ==========================================
 ADMIN_PASSWORD = "admin123"
-
 DB_HOST = "mysql-1cc70107-anhthutran21092005-5a1e.h.aivencloud.com"
 DB_PORT = 12023
 DB_USER = "avnadmin"
@@ -190,6 +189,7 @@ ITINERARY_DATABASE = {
 - **Ngày 3:** Tour lặn biển Hòn Mun / Đảo Yến -> Mua yến sào, nem nướng -> Tiễn khách.
     """
 }
+
 # Bộ dữ liệu tư vấn bổ sung cho Rule-based
 EXTRA_KNOWLEDGE = {
     "checkin": """
@@ -207,6 +207,7 @@ Tất cả các tour thiết kế tại Opis Tour đều có thể linh hoạt t
 👉 Bạn vui lòng để lại số điện thoại hoặc liên hệ Hotline/Zalo để được tư vấn viên hỗ trợ điều chỉnh lịch trình riêng miễn phí nhé!
     """
 }
+
 TRANSPORT_RATES = {
     "Phú Quốc": 1200000, "Đà Nẵng": 1000000, "Hà Nội": 900000, "Sapa": 1500000,
     "Nha Trang": 1100000, "Đà Lạt": 1300000, "Hạ Long": 1200000, "Quy Nhơn": 1200000, "TP. Hồ Chí Minh": 1000000
@@ -217,21 +218,25 @@ MEAL_RATES = {"3 Sao": 150000, "4 Sao": 250000, "5 Sao": 450000}
 # Khởi tạo session states
 if 'df_hotels' not in st.session_state:
     st.session_state.df_hotels = pd.DataFrame(get_initial_hotels())
+
 if 'df_bookings' not in st.session_state:
     st.session_state.df_bookings = pd.DataFrame([
         {"Mã Đơn": "BK-1001", "Tên Khách": "Anh Minh", "SĐT": "0901234567", "Điểm đến": "Phú Quốc", "Số Khách": "2 NL, 1 TE(5-12t)", "Thời gian đi": "Tháng 6/2026 (Cao điểm)", "Ngày/Đêm": "4N3Đ", "Khách sạn": "Vinpearl Discovery VIP (5 Sao VIP)", "Bay": "Vietnam Airlines (Phổ thông)", "Tổng Tiền": 48500000, "Trạng thái": "Chờ Giám đốc duyệt", "Ngày đặt": "2026-09-28"},
         {"Mã Đơn": "BK-1002", "Tên Khách": "Chị Hoa (Tập đoàn FPT)", "SĐT": "0912345678", "Điểm đến": "Sapa", "Số Khách": "10 NL, 2 TE(<5t)", "Thời gian đi": "Tháng 10/2026 (Thấp điểm)", "Ngày/Đêm": "3N2Đ", "Khách sạn": "Hôtel de la Coupole (5 Sao VIP)", "Bay": "Không vé bay", "Tổng Tiền": 118000000, "Trạng thái": "Đã chốt & Cọc", "Ngày đặt": "2026-09-27"}
     ])
+
 if 'df_tours' not in st.session_state:
     st.session_state.df_tours = pd.DataFrame([
         {"ID": "T001", "Tên Tour": "Hà Nội - Sapa - Fansipan 3N2Đ", "Loại": "Nội địa", "Khởi hành": "2026-10-05", "Trạng thái": "Đã đủ chỗ", "Số chỗ": 25, "Đã đặt": 25, "Doanh thu": 105000000, "Chi phí": 78000000},
         {"ID": "T002", "Tên Tour": "Đà Nẵng - Hội An - Bà Nà 4N3Đ", "Loại": "Nội địa", "Khởi hành": "2026-10-10", "Trạng thái": "Mở bán", "Số chỗ": 30, "Đã đặt": 18, "Doanh thu": 104400000, "Chi phí": 72000000}
     ])
+
 if 'df_staff' not in st.session_state:
     st.session_state.df_staff = pd.DataFrame([
         {"Mã NV": "HDV-01", "Họ và Tên": "Nguyễn Văn Tuấn", "Ngày sinh": "15/08/1990", "CCCD": "001090012345", "Chức danh": "HDV Quốc tế", "SĐT": "0908112233", "Loại thẻ": "Quốc tế", "Mã số thẻ HDV": "101180234", "Ngôn ngữ": "Tiếng Anh, Tiếng Trung", "Tuyến đường chính": "Sapa, Hà Nội, Hạ Long", "Kinh nghiệm": "8 năm", "Trạng thái": "Sẵn sàng nhận tour", "Lịch trực / Phân công": "Trực văn phòng (T2-T4)"},
         {"Mã NV": "HDV-02", "Họ và Tên": "Lê Thị Mai", "Ngày sinh": "20/03/1994", "CCCD": "048194005678", "Chức danh": "HDV Nội địa", "SĐT": "0918334455", "Loại thẻ": "Nội địa", "Mã số thẻ HDV": "201190567", "Ngôn ngữ": "Tiếng Anh", "Tuyến đường chính": "Đà Nẵng, Hội An, Huế", "Kinh nghiệm": "5 năm", "Trạng thái": "Đang đi tour (T001)", "Lịch trực / Phân công": "Đi tour Sapa (05/10 - 08/10)"}
     ])
+
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
         {"role": "assistant", "content": "Xin chào! Tôi là Trợ lý ảo tư vấn tour Opis Tour 🤖.\n\nBạn muốn tìm hiểu lịch trình du lịch ở đâu (Sapa, Phú Quốc, Đà Nẵng, Đà Lạt, Hạ Long, Nha Trang...) hoặc có thắc mắc gì về dịch vụ không ạ?"}
@@ -434,7 +439,6 @@ if "CỔNG ĐẶT TOUR" in app_mode:
                             st.warning(f"Lưu session thành công nhưng gặp lỗi đồng bộ Aiven MySQL: {ex}")
                         finally:
                             conn.close()
-
                     st.balloons()
                     st.success("🎉 Đặt tour thành công! Đã lưu vào Aiven Database. Đội ngũ Điều hành sẽ liên hệ xác nhận trong 15 phút.")
 
@@ -463,11 +467,9 @@ elif "CHATBOT" in app_mode:
         st.session_state.chat_history.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
-
         prompt_lower = prompt.lower()
         response = ""
         found_match = False
-
         # 1. Bắt từ khóa về Địa điểm / Lịch trình cụ thể
         for loc_key, itinerary in ITINERARY_DATABASE.items():
             if loc_key in prompt_lower:
@@ -475,17 +477,14 @@ elif "CHATBOT" in app_mode:
                 response += "\n\n👉 Bạn có thể chuyển sang tab **'CỔNG ĐẶT TOUR'** ở thanh bên trái để chọn tháng đi, độ tuổi trẻ em, hãng máy bay và nhận báo giá trọn gói tự động nhé!"
                 found_match = True
                 break
-
         # 2. Bắt từ khóa về Check-in / Chụp ảnh / Sống ảo
         if not found_match and any(k in prompt_lower for k in ["check in", "checkin", "sống ảo", "chụp ảnh", "cảnh đẹp", "gợi ý đi", "thích check"]):
             response = EXTRA_KNOWLEDGE["checkin"]
             found_match = True
-
         # 3. Bắt từ khóa về Thay đổi lịch trình / Không muốn đi một điểm (Chùa, núi...)
         elif not found_match and any(k in prompt_lower for k in ["không muốn", "không thích", "bỏ qua", "thay bằng", "đổi điểm", "không đi", "chùa"]):
             response = EXTRA_KNOWLEDGE["thay_doi_lich_trinh"]
             found_match = True
-
         # 4. Bắt từ khóa về Nhu cầu & Điểm đến chung
         elif not found_match and any(k in prompt_lower for k in ["nhu cầu", "tư vấn đi đâu", "nên đi đâu", "gợi ý điểm đến", "chưa biết đi đâu"]):
             response = """
@@ -496,7 +495,6 @@ elif "CHATBOT" in app_mode:
 - **Chuyến đi ngắn ngày (2N1Đ):** Hạ Long (đi du thuyền), Tam Đảo, Ba Vì.
             """
             found_match = True
-
         # 5. Bắt từ khóa về Đường đi / Di chuyển
         elif not found_match and any(k in prompt_lower for k in ["đường đi", "phương tiện", "di chuyển", "đi bằng gì", "xe gì", "sân bay"]):
             response = """
@@ -507,7 +505,6 @@ elif "CHATBOT" in app_mode:
 - **Đà Lạt:** Bay đến Sân bay Liên Khương (DLI) cách trung tâm 30km, hoặc đi xe Limousine từ TP.HCM (khoảng 6-8 tiếng).
             """
             found_match = True
-
         # 6. Bắt từ khóa về Chính sách giá / Trẻ em / Mùa vụ
         elif not found_match and any(k in prompt_lower for k in ["trẻ em", "tuổi", "giá trẻ em", "em bé"]):
             response = """
@@ -517,7 +514,6 @@ elif "CHATBOT" in app_mode:
 - **Từ 12 tuổi trở lên:** Tính như người lớn (100% giá).
             """
             found_match = True
-
         # 7. Trả lời mặc định (Tránh để khách cảm thấy bị từ chối)
         if not found_match:
             response = (
@@ -528,7 +524,6 @@ elif "CHATBOT" in app_mode:
                 "- 📍 **Lịch trình tour chi tiết** (Sapa, Phú Quốc, Đà Nẵng, Đà Lạt...)\n"
                 "- 🚗 **Hướng dẫn di chuyển & Phương tiện**"
             )
-
         with st.chat_message("assistant"):
             st.markdown(response)
         st.session_state.chat_history.append({"role": "assistant", "content": response})
