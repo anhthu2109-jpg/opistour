@@ -7,7 +7,6 @@ from google import genai
 
 # Thay chuỗi API Key của bạn lấy từ https://aistudio.google.com/ vào bên dưới
 GEMINI_API_KEY = "AQ.Ab8RN6K65E5S6OcGmuS0HiVo062VYSZVEgindQa620I8KfYQbQ" 
-
 try:
     client = genai.Client(api_key=GEMINI_API_KEY)
 except Exception as e:
@@ -17,7 +16,6 @@ except Exception as e:
 # CẤU HÌNH BẢO MẬT ADMIN & KẾT NỐI DATABASE AIVEN
 # ==========================================
 ADMIN_PASSWORD = "admin123"
-
 DB_HOST = "mysql-1cc70107-anhthutran21092005-5a1e.h.aivencloud.com"
 DB_PORT = 12023
 DB_USER = "avnadmin"
@@ -199,6 +197,7 @@ ITINERARY_DATABASE = {
 - **Ngày 3:** Tour lặn biển Hòn Mun / Đảo Yến -> Mua yến sào, nem nướng -> Tiễn khách.
     """
 }
+
 CONSULTING_DATABASE = {
     "nhu cau": """
 💡 **Tư vấn lựa chọn điểm đến theo nhu cầu của bạn:**
@@ -215,31 +214,37 @@ CONSULTING_DATABASE = {
 - **Đà Lạt:** Bay đến Sân bay Liên Khương (DLI) cách trung tâm 30km, hoặc đi xe Limousine từ TP.HCM (khoảng 6-8 tiếng).
     """
 }
+
 TRANSPORT_RATES = {
     "Phú Quốc": 1200000, "Đà Nẵng": 1000000, "Hà Nội": 900000, "Sapa": 1500000,
     "Nha Trang": 1100000, "Đà Lạt": 1300000, "Hạ Long": 1200000, "Quy Nhơn": 1200000, "TP. Hồ Chí Minh": 1000000
 }
+
 GUIDE_RATE = 800000
 MEAL_RATES = {"3 Sao": 150000, "4 Sao": 250000, "5 Sao": 450000}
 
 # Khởi tạo session states
 if 'df_hotels' not in st.session_state:
     st.session_state.df_hotels = pd.DataFrame(get_initial_hotels())
+
 if 'df_bookings' not in st.session_state:
     st.session_state.df_bookings = pd.DataFrame([
         {"Mã Đơn": "BK-1001", "Tên Khách": "Anh Minh", "SĐT": "0901234567", "Điểm đến": "Phú Quốc", "Số Khách": "2 NL, 1 TE(5-12t)", "Thời gian đi": "Tháng 6/2026 (Cao điểm)", "Ngày/Đêm": "4N3Đ", "Khách sạn": "Vinpearl Discovery VIP (5 Sao VIP)", "Bay": "Vietnam Airlines (Phổ thông)", "Tổng Tiền": 48500000, "Trạng thái": "Chờ Giám đốc duyệt", "Ngày đặt": "2026-09-28"},
         {"Mã Đơn": "BK-1002", "Tên Khách": "Chị Hoa (Tập đoàn FPT)", "SĐT": "0912345678", "Điểm đến": "Sapa", "Số Khách": "10 NL, 2 TE(<5t)", "Thời gian đi": "Tháng 10/2026 (Thấp điểm)", "Ngày/Đêm": "3N2Đ", "Khách sạn": "Hôtel de la Coupole (5 Sao VIP)", "Bay": "Không vé bay", "Tổng Tiền": 118000000, "Trạng thái": "Đã chốt & Cọc", "Ngày đặt": "2026-09-27"}
     ])
+
 if 'df_tours' not in st.session_state:
     st.session_state.df_tours = pd.DataFrame([
         {"ID": "T001", "Tên Tour": "Hà Nội - Sapa - Fansipan 3N2Đ", "Loại": "Nội địa", "Khởi hành": "2026-10-05", "Trạng thái": "Đã đủ chỗ", "Số chỗ": 25, "Đã đặt": 25, "Doanh thu": 105000000, "Chi phí": 78000000},
         {"ID": "T002", "Tên Tour": "Đà Nẵng - Hội An - Bà Nà 4N3Đ", "Loại": "Nội địa", "Khởi hành": "2026-10-10", "Trạng thái": "Mở bán", "Số chỗ": 30, "Đã đặt": 18, "Doanh thu": 104400000, "Chi phí": 72000000}
     ])
+
 if 'df_staff' not in st.session_state:
     st.session_state.df_staff = pd.DataFrame([
         {"Mã NV": "HDV-01", "Họ và Tên": "Nguyễn Văn Tuấn", "Ngày sinh": "15/08/1990", "CCCD": "001090012345", "Chức danh": "HDV Quốc tế", "SĐT": "0908112233", "Loại thẻ": "Quốc tế", "Mã số thẻ HDV": "101180234", "Ngôn ngữ": "Tiếng Anh, Tiếng Trung", "Tuyến đường chính": "Sapa, Hà Nội, Hạ Long", "Kinh nghiệm": "8 năm", "Trạng thái": "Sẵn sàng nhận tour", "Lịch trực / Phân công": "Trực văn phòng (T2-T4)"},
         {"Mã NV": "HDV-02", "Họ và Tên": "Lê Thị Mai", "Ngày sinh": "20/03/1994", "CCCD": "048194005678", "Chức danh": "HDV Nội địa", "SĐT": "0918334455", "Loại thẻ": "Nội địa", "Mã số thẻ HDV": "201190567", "Ngôn ngữ": "Tiếng Anh", "Tuyến đường chính": "Đà Nẵng, Hội An, Huế", "Kinh nghiệm": "5 năm", "Trạng thái": "Đang đi tour (T001)", "Lịch trực / Phân công": "Đi tour Sapa (05/10 - 08/10)"}
     ])
+
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
         {"role": "assistant", "content": "Xin chào! Tôi là Trợ lý ảo tư vấn tour Viet Travel 🤖.\n\nBạn muốn tìm hiểu lịch trình du lịch ở đâu (Sapa, Phú Quốc, Đà Nẵng, Đà Lạt, Hạ Long, Nha Trang...) hoặc có thắc mắc gì về dịch vụ không ạ?"}
@@ -442,7 +447,6 @@ if "CỔNG ĐẶT TOUR" in app_mode:
                             st.warning(f"Lưu session thành công nhưng gặp lỗi đồng bộ Aiven MySQL: {ex}")
                         finally:
                             conn.close()
-
                     st.balloons()
                     st.success("🎉 Đặt tour thành công! Đã lưu vào Aiven Database. Đội ngũ Điều hành sẽ liên hệ xác nhận trong 15 phút.")
 
@@ -472,7 +476,6 @@ elif "CHATBOT" in app_mode:
         st.session_state.chat_history.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
-
         # AI trả lời tự động linh hoạt theo ngữ cảnh
         with st.chat_message("assistant"):
             with st.spinner("🤖 Trợ lý AI đang soạn câu trả lời..."):
@@ -484,7 +487,6 @@ elif "CHATBOT" in app_mode:
                 3. Nếu khách muốn check-in sống ảo, hãy gợi ý các điểm chụp ảnh hot nhất.
                 4. Trả lời bằng tiếng Việt ngắn gọn, lịch sự, đúng trọng tâm và dùng biểu tượng cảm xúc (emoji) phù hợp.
                 """
-
                 # Tạo lịch sử cuộc trò chuyện để AI hiểu ngữ cảnh trước đó
                 conversation_context = system_instruction + "\n\nLịch sử trò chuyện:\n"
                 for msg in st.session_state.chat_history[-6:]:
@@ -492,13 +494,10 @@ elif "CHATBOT" in app_mode:
                     conversation_context += f"{role_label}: {msg['content']}\n"
                 
                 conversation_context += f"Khách hàng: {prompt}\nTrợ lý:"
-
                 try:
                     if client:
                         response = client.models.generate_content(
                             model='gemini-3.8-flash', 
-                            contents=conversation_context
-)
                             contents=conversation_context
                         )
                         ai_response = response.text
@@ -506,9 +505,7 @@ elif "CHATBOT" in app_mode:
                         ai_response = "⚠️ Chưa cấu hình Gemini API Key. Vui lòng kiểm tra lại cấu hình."
                 except Exception as ex:
                     ai_response = f"Dịch vụ AI tạm thời gián đoạn: {ex}"
-
                 st.markdown(ai_response)
-
         # Lưu phản hồi vào lịch sử chat
         st.session_state.chat_history.append({"role": "assistant", "content": ai_response})
 
