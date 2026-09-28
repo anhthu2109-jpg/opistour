@@ -3,6 +3,15 @@ import pandas as pd
 from datetime import datetime, date
 import math
 import pymysql
+from google import genai
+
+# Thay chuỗi API Key của bạn lấy từ https://aistudio.google.com/ vào bên dưới
+GEMINI_API_KEY = "AQ.Ab8RN6K65E5S6OcGmuS0HiVo062VYSZVEgindQa620I8KfYQbQ" 
+
+try:
+    client = genai.Client(api_key=GEMINI_API_KEY)
+except Exception as e:
+    client = None
 
 # ==========================================
 # CẤU HÌNH BẢO MẬT ADMIN & KẾT NỐI DATABASE AIVEN
@@ -459,59 +468,48 @@ elif "CHATBOT" in app_mode:
     user_input = st.chat_input("Nhập thắc mắc của bạn về lịch trình tour tại đây...")
     prompt = user_input or quick_q
     if prompt:
+        if prompt:
+        # Hiển thị câu hỏi của khách hàng
         st.session_state.chat_history.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
-        prompt_lower = prompt.lower()
-        response = ""
-        found_match = False
-        
-        # 1. Kiểm tra tư vấn lịch trình theo địa điểm
-        for loc_key, itinerary in ITINERARY_DATABASE.items():
-            if loc_key in prompt_lower:
-                response = f"Dưới đây là gợi ý lịch trình chi tiết cho chuyến đi **{loc_key.upper()}** của bạn:\n" + itinerary
-                response += "\n\n👉 Bạn có thể chuyển sang tab **'CỔNG ĐẶT TOUR'** ở thanh bên trái để chọn tháng đi, độ tuổi trẻ em, hãng máy bay và nhận báo giá trọn gói tự động nhé!"
-                found_match = True
-                break
-        
-        # 2. Kiểm tra tư vấn nhu cầu du lịch
-        if not found_match and any(k in prompt_lower for k in ["nhu cầu", "tư vấn đi đâu", "nên đi đâu", "gợi ý điểm đến", "chưa biết đi đâu"]):
-            response = CONSULTING_DATABASE["nhu cau"]
-            found_match = True
 
-        # 3. Kiểm tra tư vấn đường đi & phương tiện
-        if not found_match and any(k in prompt_lower for k in ["đường đi", "phương tiện", "di chuyển", "đi bằng gì", "xe gì", "sân bay"]):
-            response = CONSULTING_DATABASE["duong di"]
-            found_match = True
-
-        # 4. Kiểm tra các câu hỏi về chính sách
-        if not found_match:
-            if any(k in prompt_lower for k in ["trẻ em", "tuổi", "giá trẻ em", "em bé"]):
-                response = """
-👶 **Chính sách giá tour theo độ tuổi tại Viet Travel:**
-- **Dưới 5 tuổi:** Miễn phí 100% giá dịch vụ tour.
-- **Từ 5 đến dưới 12 tuổi:** Tính 50% giá dịch vụ tour.
-- **Từ 12 tuổi trở lên:** Tính như người lớn (100% giá).
-                """
-            elif any(k in prompt_lower for k in ["mùa", "cao điểm", "thấp điểm", "tháng"]):
-                response = """
-📅 **Chính sách Mùa vụ Du lịch:**
-- **Mùa cao điểm (Tháng 6, 7, 8 và Tháng 12, 1):** Phụ thu 20% do dịch vụ vé tham quan, phòng ở và di chuyển tăng cao.
-- **Mùa thấp điểm (Các tháng còn lại):** Áp dụng nguyên giá chuẩn, nhiều ưu đãi đi kèm.
-                """
-            else:
-                response = (
-                    f"Cảm ơn bạn đã đặt câu hỏi: *\"{prompt}\"*.\n\n"
-                    "🤖 **Tôi có thể hỗ trợ bạn các thông tin sau:**\n"
-                    "- **Tư vấn nhu cầu:** Gợi ý điểm đến phù hợp theo sở thích.\n"
-                    "- **Đường đi & Di chuyển:** Hướng dẫn phương tiện đến Sapa, Phú Quốc, Đà Nẵng, Đà Lạt...\n"
-                    "- **Lịch trình chi tiết:** Lịch trình 2N1Đ, 3N2Đ, 4N3Đ tại các điểm hot.\n"
-                    "- **Chính sách:** Giá trẻ em, phụ thu mùa cao điểm."
-                )
-
+        # AI trả lời tự động linh hoạt theo ngữ cảnh
         with st.chat_message("assistant"):
-            st.markdown(response)
-        st.session_state.chat_history.append({"role": "assistant", "content": response})
+            with st.spinner("🤖 Trợ lý AI đang soạn câu trả lời..."):
+                system_instruction = """
+                Bạn là Trợ lý tư vấn du lịch thông minh, thân thiện của Opis Tour Enterprise.
+                Nhiệm vụ của bạn:
+                1. Đọc hiểu linh hoạt ngữ cảnh câu hỏi của khách (nhu cầu du lịch, điểm check-in, di chuyển, thay đổi lịch trình...).
+                2. Nếu khách không muốn đi một địa điểm trong chương trình (ví dụ: không thích đi chùa, leo núi...), hãy đề xuất ngay các điểm thay thế phù hợp (quán cafe view đẹp, điểm check-in, khu vui chơi).
+                3. Nếu khách muốn check-in sống ảo, hãy gợi ý các điểm chụp ảnh hot nhất.
+                4. Trả lời bằng tiếng Việt ngắn gọn, lịch sự, đúng trọng tâm và dùng biểu tượng cảm xúc (emoji) phù hợp.
+                """
+
+                # Tạo lịch sử cuộc trò chuyện để AI hiểu ngữ cảnh trước đó
+                conversation_context = system_instruction + "\n\nLịch sử trò chuyện:\n"
+                for msg in st.session_state.chat_history[-6:]:
+                    role_label = "Khách hàng" if msg["role"] == "user" else "Trợ lý"
+                    conversation_context += f"{role_label}: {msg['content']}\n"
+                
+                conversation_context += f"Khách hàng: {prompt}\nTrợ lý:"
+
+                try:
+                    if client:
+                        response = client.models.generate_content(
+                            model='gemini-2.5-flash',
+                            contents=conversation_context
+                        )
+                        ai_response = response.text
+                    else:
+                        ai_response = "⚠️ Chưa cấu hình Gemini API Key. Vui lòng kiểm tra lại cấu hình."
+                except Exception as ex:
+                    ai_response = f"Dịch vụ AI tạm thời gián đoạn: {ex}"
+
+                st.markdown(ai_response)
+
+        # Lưu phản hồi vào lịch sử chat
+        st.session_state.chat_history.append({"role": "assistant", "content": ai_response})
 
 # ------------------------------------------
 # CHẾ ĐỘ 3: QUẢN TRỊ CEO
