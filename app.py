@@ -5,12 +5,10 @@ import math
 import pymysql
 from google import genai
 
-# Thay chuỗi API Key của bạn lấy từ https://aistudio.google.com/ vào bên dưới
-GEMINI_API_KEY = "AQ.Ab8RN6Im4364rpP31Dyfxf1h6utzE7Yrouc2hIDpr3GySRYFjg" 
-try:
-    client = genai.Client(api_key=GEMINI_API_KEY)
-except Exception as e:
-    client = None
+import google.generativeai as genai
+import os
+
+genai.configure(api_key=os.environ["AQ.Ab8RN6Im4364rpP31Dyfxf1h6utzE7Yrouc2hIDpr3GySRYFjg"])
 
 # ==========================================
 # CẤU HÌNH BẢO MẬT ADMIN & KẾT NỐI DATABASE AIVEN
