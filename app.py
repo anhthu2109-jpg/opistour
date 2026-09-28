@@ -259,7 +259,7 @@ if "chat_history" not in st.session_state:
 # 3. THANH ĐIỀU HƯỚNG CHÍNH (SIDEBAR)
 # ==========================================
 with st.sidebar:
-    st.image("images.jpg", width=65)
+    st.image("images.jpg", width=80)
     st.title("OPIS TOUR ENTERPRISE")
     
     # ĐOẠN KIỂM TRA TRẠNG THÁI KẾT NỐI AIVEN
@@ -306,7 +306,6 @@ if "CỔNG ĐẶT TOUR" in app_mode:
         use_container_width=True
     )
     
-    st.caption("Hãy tự do thiết kế chuyến đi hoàn hảo của bạn. Hệ thống sẽ tự động tính toán chi phí minh bạch tức thì!")
     st.caption("Hãy tự do thiết kế chuyến đi hoàn hảo của bạn. Hệ thống sẽ tự động tính toán chi phí minh bạch tức thì!")
     
     c_left, c_right = st.columns([1.2, 1])
