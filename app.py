@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime, date
 import math
 import pymysql
+import os
 
 # ==========================================
 # CẤU HÌNH BẢO MẬT ADMIN & KẾT NỐI DATABASE AIVEN
@@ -67,6 +68,22 @@ def init_db():
 
 # Tự động khởi chạy kiểm tra & tạo bảng DB khi ứng dụng chạy
 init_db()
+
+# ==========================================
+# HÀM HIỂN THỊ ẢNH AN TOÀN (TRÁNH LỖI FILE NOT FOUND)
+# ==========================================
+def safe_image(img_path, fallback_url, caption=None, width=None, use_container_width=False):
+    """Hiển thị ảnh an toàn, nếu file cục bộ không tồn tại sẽ dùng fallback URL."""
+    if img_path and os.path.exists(img_path):
+        if width:
+            st.image(img_path, caption=caption, width=width)
+        else:
+            st.image(img_path, caption=caption, use_container_width=use_container_width)
+    else:
+        if width:
+            st.image(fallback_url, caption=caption, width=width)
+        else:
+            st.image(fallback_url, caption=caption, use_container_width=use_container_width)
 
 # ==========================================
 # 1. CẤU HÌNH TRANG & GIAO DIỆN HỆ THỐNG
@@ -151,17 +168,17 @@ FLIGHT_RATES = {
     "Bamboo Airways": {"Phổ thông": 2200000, "Thương gia": 5200000}
 }
 
-# Dữ liệu hình ảnh minh họa cho các điểm đến
+# Dữ liệu hình ảnh minh họa cho các điểm đến (Fallback sang Unsplash URL nếu thiếu file local)
 DESTINATION_IMAGES = {
-    "Sapa": "sapa.jpg",
-    "Phú Quốc": "phú quốc.jpg",
-    "Đà Nẵng": "đà nẵng.jpg",
-    "Đà Lạt": "đà lạt.jpg",
-    "Hạ Long": "hạ long.jpg",
-    "Nha Trang": "nha trang.jpg",
-    "Hà Nội": "hà nội.jpg",
-    "Quy Nhơn": "quy nhơn.jpg",
-    "TP. Hồ Chí Minh": "tphcm.jpg"
+    "Sapa": ("sapa.jpg", "https://images.unsplash.com/photo-1570366583818-f77a0622031a?auto=format&fit=crop&w=800&q=80"),
+    "Phú Quốc": ("phú quốc.jpg", "https://images.unsplash.com/photo-1540202404-a2f29016b523?auto=format&fit=crop&w=800&q=80"),
+    "Đà Nẵng": ("đà nẵng.jpg", "https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=800&q=80"),
+    "Đà Lạt": ("đà lạt.jpg", "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=800&q=80"),
+    "Hạ Long": ("hạ long.jpg", "https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=800&q=80"),
+    "Nha Trang": ("nha trang.jpg", "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80"),
+    "Hà Nội": ("hà nội.jpg", "https://images.unsplash.com/photo-1509030450996-93f2e3d84074?auto=format&fit=crop&w=800&q=80"),
+    "Quy Nhơn": ("quy nhơn.jpg", "https://images.unsplash.com/photo-1506929562872-bb421503ef21?auto=format&fit=crop&w=800&q=80"),
+    "TP. Hồ Chí Minh": ("tphcm.jpg", "https://images.unsplash.com/photo-1583417319070-4a69db38a482?auto=format&fit=crop&w=800&q=80")
 }
 
 ITINERARY_DATABASE = {
@@ -218,6 +235,24 @@ Tất cả các tour thiết kế tại Opis Tour đều có thể linh hoạt t
 - **Nếu không muốn đi chùa / điểm tâm linh:** Bạn có thể thay bằng ghé thăm quán cafe view đẹp, điểm check-in thiên nhiên hoặc khu vui chơi giải trí.
 - **Nếu không thích leo núi / di chuyển nhiều:** Tư vấn viên sẽ xếp các điểm nghỉ dưỡng, đi cáp treo hoặc đi xe điện nhẹ nhàng.
 👉 Bạn vui lòng để lại số điện thoại hoặc liên hệ Hotline/Zalo để được tư vấn viên hỗ trợ điều chỉnh lịch trình riêng miễn phí nhé!
+    """,
+    "an_uong": """
+🍽️ **Về chế độ ăn uống & Ẩm thực tại Opis Tour:**
+- Tất cả các tour đều hỗ trợ linh hoạt thực đơn theo yêu cầu!
+- Quý khách **không ăn được hải sản**, **ăn chay/ăn kiêng**, hoặc **dị ứng thực phẩm** sẽ được đổi sang món thịt (heo, gà, bò) hoặc đồ chay tương đương mà không phát sinh thêm chi phí.
+- Quý khách chỉ cần ghi chú khi đặt tour hoặc báo trước với HDV trước 24h khởi hành.
+    """,
+    "chinh_sach_gia": """
+💳 **Chính sách Đặt cọc & Thanh toán:**
+- Quý khách chỉ cần đặt cọc **30% - 50%** giá trị tour để giữ chỗ dịch vụ.
+- Hỗ trợ thanh toán qua Chuyển khoản ngân hàng, Thẻ tín dụng hoặc VNPay.
+- Hủy tour trước 7 ngày khởi hành sẽ được **hoàn 100% tiền cọc**.
+    """,
+    "thoi_tiet": """
+☀️ **Tư vấn Thời điểm Du lịch lý tưởng:**
+- **Đà Nẵng / Phú Quốc:** Đẹp nhất từ tháng 1 đến tháng 8 (mùa khô, biển trong xanh).
+- **Sapa / Hà Giang:** Mùa lúa chín (T9 - T10), Mùa săn mây & hoa tam giác mạch (T11 - T1).
+- **Đà Lạt:** Mùa hoa dã quỳ/mai anh đào, không khí mát mẻ quanh năm (T11 - T2).
     """
 }
 
@@ -231,25 +266,21 @@ MEAL_RATES = {"3 Sao": 150000, "4 Sao": 250000, "5 Sao": 450000}
 # Khởi tạo session states
 if 'df_hotels' not in st.session_state:
     st.session_state.df_hotels = pd.DataFrame(get_initial_hotels())
-
 if 'df_bookings' not in st.session_state:
     st.session_state.df_bookings = pd.DataFrame([
         {"Mã Đơn": "BK-1001", "Tên Khách": "Anh Minh", "SĐT": "0901234567", "Điểm đến": "Phú Quốc", "Số Khách": "2 NL, 1 TE(5-12t)", "Thời gian đi": "Tháng 6/2026 (Cao điểm)", "Ngày/Đêm": "4N3Đ", "Khách sạn": "Vinpearl Discovery VIP (5 Sao VIP)", "Bay": "Vietnam Airlines (Phổ thông)", "Tổng Tiền": 48500000, "Trạng thái": "Chờ Giám đốc duyệt", "Ngày đặt": "2026-09-28"},
         {"Mã Đơn": "BK-1002", "Tên Khách": "Chị Hoa (Tập đoàn FPT)", "SĐT": "0912345678", "Điểm đến": "Sapa", "Số Khách": "10 NL, 2 TE(<5t)", "Thời gian đi": "Tháng 10/2026 (Thấp điểm)", "Ngày/Đêm": "3N2Đ", "Khách sạn": "Hôtel de la Coupole (5 Sao VIP)", "Bay": "Không vé bay", "Tổng Tiền": 118000000, "Trạng thái": "Đã chốt & Cọc", "Ngày đặt": "2026-09-27"}
     ])
-
 if 'df_tours' not in st.session_state:
     st.session_state.df_tours = pd.DataFrame([
         {"ID": "T001", "Tên Tour": "Hà Nội - Sapa - Fansipan 3N2Đ", "Loại": "Nội địa", "Khởi hành": "2026-10-05", "Trạng thái": "Đã đủ chỗ", "Số chỗ": 25, "Đã đặt": 25, "Doanh thu": 105000000, "Chi phí": 78000000},
         {"ID": "T002", "Tên Tour": "Đà Nẵng - Hội An - Bà Nà 4N3Đ", "Loại": "Nội địa", "Khởi hành": "2026-10-10", "Trạng thái": "Mở bán", "Số chỗ": 30, "Đã đặt": 18, "Doanh thu": 104400000, "Chi phí": 72000000}
     ])
-
 if 'df_staff' not in st.session_state:
     st.session_state.df_staff = pd.DataFrame([
         {"Mã NV": "HDV-01", "Họ và Tên": "Nguyễn Văn Tuấn", "Ngày sinh": "15/08/1990", "CCCD": "001090012345", "Chức danh": "HDV Quốc tế", "SĐT": "0908112233", "Loại thẻ": "Quốc tế", "Mã số thẻ HDV": "101180234", "Ngôn ngữ": "Tiếng Anh, Tiếng Trung", "Tuyến đường chính": "Sapa, Hà Nội, Hạ Long", "Kinh nghiệm": "8 năm", "Trạng thái": "Sẵn sàng nhận tour", "Lịch trực / Phân công": "Trực văn phòng (T2-T4)"},
         {"Mã NV": "HDV-02", "Họ và Tên": "Lê Thị Mai", "Ngày sinh": "20/03/1994", "CCCD": "048194005678", "Chức danh": "HDV Nội địa", "SĐT": "0918334455", "Loại thẻ": "Nội địa", "Mã số thẻ HDV": "201190567", "Ngôn ngữ": "Tiếng Anh", "Tuyến đường chính": "Đà Nẵng, Hội An, Huế", "Kinh nghiệm": "5 năm", "Trạng thái": "Đang đi tour (T001)", "Lịch trực / Phân công": "Đi tour Sapa (05/10 - 08/10)"}
     ])
-
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
         {"role": "assistant", "content": "Xin chào! Tôi là Trợ lý ảo tư vấn tour Opis Tour 🤖.\n\nBạn muốn tìm hiểu lịch trình du lịch ở đâu (Sapa, Phú Quốc, Đà Nẵng, Đà Lạt, Hạ Long, Nha Trang...) hoặc có thắc mắc gì về dịch vụ không ạ?"}
@@ -259,7 +290,7 @@ if "chat_history" not in st.session_state:
 # 3. THANH ĐIỀU HƯỚNG CHÍNH (SIDEBAR)
 # ==========================================
 with st.sidebar:
-    st.image("images.jpg", width=120)
+    safe_image("images.jpg", "https://cdn-icons-png.flaticon.com/512/201/201623.png", width=120)
     st.title("OPIS TOUR ENTERPRISE")
     
     # ĐOẠN KIỂM TRA TRẠNG THÁI KẾT NỐI AIVEN
@@ -300,8 +331,10 @@ with st.sidebar:
 # ==========================================
 if "CỔNG ĐẶT TOUR" in app_mode:
     st.markdown('<div class="main-title">🏖️ ĐẶT TOUR DU LỊCH THIẾT KẾ THEO YÊU CẦU CỦA BẠN</div>', unsafe_allow_html=True)
-    st.image(
+    
+    safe_image(
         "banner.jpeg", 
+        "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1200&q=80",
         caption="Opis Tour - Đồng hành cùng bạn trên mọi hành trình",
         use_container_width=True
     )
@@ -332,7 +365,8 @@ if "CỔNG ĐẶT TOUR" in app_mode:
             
             # --- HIỂN THỊ HÌNH ẢNH ĐIỂM ĐẾN TỰ ĐỘNG ---
             if destination in DESTINATION_IMAGES:
-                st.image(DESTINATION_IMAGES[destination], caption=f"Cảnh đẹp {destination}", use_container_width=True)
+                local_path, fallback_url = DESTINATION_IMAGES[destination]
+                safe_image(local_path, fallback_url, caption=f"Cảnh đẹp {destination}", use_container_width=True)
                 
             pax_adult = st.number_input("👨‍🦰 Người lớn (≥ 12 tuổi) [100% giá]", min_value=1, value=2, step=1)
             pax_child_5_12 = st.number_input("🧒 Trẻ em (5 - 12 tuổi) [50% giá]", min_value=0, value=1, step=1)
@@ -415,7 +449,7 @@ if "CỔNG ĐẶT TOUR" in app_mode:
         with st.form("customer_booking_form"):
             cust_name = st.text_input("Họ và Tên người đặt*", placeholder="Nhập họ tên...")
             cust_phone = st.text_input("Số điện thoại liên hệ*", placeholder="Nhập SĐT...")
-            cust_note = st.text_area("Ghi chú thêm (Nếu có)", placeholder="Ví dụ: Yêu cầu phòng tầng cao, có xe đẩy trẻ em...")
+            cust_note = st.text_area("Ghi chú thêm (Nếu có)", placeholder="Ví dụ: Yêu cầu phòng tầng cao, không ăn hải sản, có xe đẩy trẻ em...")
             btn_submit = st.form_submit_button("🚀 ĐẶT TOUR NGAY")
             if btn_submit:
                 if not cust_name or not cust_phone:
@@ -473,7 +507,7 @@ if "CỔNG ĐẶT TOUR" in app_mode:
                     st.success("🎉 Đặt tour thành công! Đã lưu vào Aiven Database. Đội ngũ Điều hành sẽ liên hệ xác nhận trong 15 phút.")
 
 # ------------------------------------------
-# CHẾ ĐỘ 2: CHATBOT TƯ VẤN LỊCH TRÌNH
+# CHẾ ĐỘ 2: CHATBOT TƯ VẤN LỊCH TRÌNH (CẬP NHẬT TĂNG ĐA DẠNG CÂU HỎI)
 # ------------------------------------------
 elif "CHATBOT" in app_mode:
     st.markdown('<div class="main-title">💬 CHATBOT HỎI ĐÁP & TƯ VẤN LỊCH TRÌNH DU LỊCH</div>', unsafe_allow_html=True)
@@ -483,15 +517,16 @@ elif "CHATBOT" in app_mode:
     quick_q = None
     if quick_cols[0].button("📍 Lịch trình Sapa"): quick_q = "Gợi ý lịch trình tour Sapa"
     if quick_cols[1].button("🏖️ Lịch trình Phú Quốc"): quick_q = "Cho tôi lịch trình đi Phú Quốc"
-    if quick_cols[2].button("🌉 Lịch trình Đà Nẵng"): quick_q = "Tư vấn tour Đà Nẵng"
-    if quick_cols[3].button("🌲 Lịch trình Đà Lạt"): quick_q = "Lịch trình đi Đà Lạt thế nào?"
+    if quick_cols[2].button("🍽️ Không ăn được hải sản?"): quick_q = "Tôi không ăn được hải sản thì có món khác không?"
+    if quick_cols[3].button("💳 Chính sách đặt cọc"): quick_q = "Đặt tour cọc bao nhiêu tiền?"
     st.divider()
     
     for message in st.session_state.chat_history:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
             if "image" in message:
-                st.image(message["image"], use_container_width=True)
+                local_p, fall_u = message["image"]
+                safe_image(local_p, fall_u, use_container_width=True)
             
     user_input = st.chat_input("Nhập thắc mắc của bạn về lịch trình tour tại đây...")
     prompt = user_input or quick_q
@@ -513,21 +548,41 @@ elif "CHATBOT" in app_mode:
                 found_match = True
                 
                 # Tìm ảnh tương ứng nếu có
-                for dest_name, img_url in DESTINATION_IMAGES.items():
-                    if loc_key in dest_name.lower():
-                        matched_img = img_url
-                        break
+                if loc_key in DESTINATION_IMAGES:
+                    matched_img = DESTINATION_IMAGES[loc_key]
+                else:
+                    for dest_name, img_tuple in DESTINATION_IMAGES.items():
+                        if loc_key in dest_name.lower():
+                            matched_img = img_tuple
+                            break
                 break
                 
-        # 2. Bắt từ khóa về Check-in / Chụp ảnh / Sống ảo
-        if not found_match and any(k in prompt_lower for k in ["check in", "checkin", "sống ảo", "chụp ảnh", "cảnh đẹp", "gợi ý đi", "thích check"]):
+        # 2. Bắt từ khóa về Ẩm thực / Ăn uống / Dị ứng / Hải sản / Ăn chay (MỚI BỔ SUNG)
+        if not found_match and any(k in prompt_lower for k in ["ăn", "món", "hải sản", "chay", "dị ứng", "thực đơn", "nhà hàng"]):
+            response = EXTRA_KNOWLEDGE["an_uong"]
+            found_match = True
+
+        # 3. Bắt từ khóa về Giá cả / Đặt cọc / Thanh toán / Hoàn tiền (MỚI BỔ SUNG)
+        elif not found_match and any(k in prompt_lower for k in ["giá", "cọc", "thanh toán", "hoàn tiền", "chuyển khoản", "chi phí"]):
+            response = EXTRA_KNOWLEDGE["chinh_sach_gia"]
+            found_match = True
+
+        # 4. Bắt từ khóa về Mùa vụ / Thời tiết / Tháng đi (MỚI BỔ SUNG)
+        elif not found_match and any(k in prompt_lower for k in ["mùa nào", "thời tiết", "tháng mấy", "mưa", "nắng", "đẹp nhất"]):
+            response = EXTRA_KNOWLEDGE["thoi_tiet"]
+            found_match = True
+
+        # 5. Bắt từ khóa về Check-in / Chụp ảnh / Sống ảo
+        elif not found_match and any(k in prompt_lower for k in ["check in", "checkin", "sống ảo", "chụp ảnh", "cảnh đẹp", "gợi ý đi", "thích check"]):
             response = EXTRA_KNOWLEDGE["checkin"]
             found_match = True
-        # 3. Bắt từ khóa về Thay đổi lịch trình / Không muốn đi một điểm (Chùa, núi...)
+
+        # 6. Bắt từ khóa về Thay đổi lịch trình / Không muốn đi một điểm (Chùa, núi...)
         elif not found_match and any(k in prompt_lower for k in ["không muốn", "không thích", "bỏ qua", "thay bằng", "đổi điểm", "không đi", "chùa"]):
             response = EXTRA_KNOWLEDGE["thay_doi_lich_trinh"]
             found_match = True
-        # 4. Bắt từ khóa về Nhu cầu & Điểm đến chung
+
+        # 7. Bắt từ khóa về Nhu cầu & Điểm đến chung
         elif not found_match and any(k in prompt_lower for k in ["nhu cầu", "tư vấn đi đâu", "nên đi đâu", "gợi ý điểm đến", "chưa biết đi đâu"]):
             response = """
 💡 **Tư vấn lựa chọn điểm đến theo nhu cầu của bạn:**
@@ -537,7 +592,8 @@ elif "CHATBOT" in app_mode:
 - **Chuyến đi ngắn ngày (2N1Đ):** Hạ Long (đi du thuyền), Tam Đảo, Ba Vì.
             """
             found_match = True
-        # 5. Bắt từ khóa về Đường đi / Di chuyển
+
+        # 8. Bắt từ khóa về Đường đi / Di chuyển
         elif not found_match and any(k in prompt_lower for k in ["đường đi", "phương tiện", "di chuyển", "đi bằng gì", "xe gì", "sân bay"]):
             response = """
 🚗 **Tư vấn đường đi & Phương tiện di chuyển phổ biến:**
@@ -547,7 +603,8 @@ elif "CHATBOT" in app_mode:
 - **Đà Lạt:** Bay đến Sân bay Liên Khương (DLI) cách trung tâm 30km, hoặc đi xe Limousine từ TP.HCM (khoảng 6-8 tiếng).
             """
             found_match = True
-        # 6. Bắt từ khóa về Chính sách giá / Trẻ em / Mùa vụ
+
+        # 9. Bắt từ khóa về Chính sách giá / Trẻ em
         elif not found_match and any(k in prompt_lower for k in ["trẻ em", "tuổi", "giá trẻ em", "em bé"]):
             response = """
 👶 **Chính sách giá tour theo độ tuổi tại Opis Tour:**
@@ -556,12 +613,15 @@ elif "CHATBOT" in app_mode:
 - **Từ 12 tuổi trở lên:** Tính như người lớn (100% giá).
             """
             found_match = True
-        # 7. Trả lời mặc định (Tránh để khách cảm thấy bị từ chối)
+
+        # 10. Trả lời mặc định (Fallback - mở rộng gợi ý)
         if not found_match:
             response = (
                 f"Cảm ơn bạn đã quan tâm: *\"{prompt}\"*.\n\n"
                 "🤖 **Opis Tour có thể hỗ trợ ngay cho bạn về:**\n"
+                "- 🍽️ **Thực đơn & Đồ ăn dị ứng** (Gõ: *'không ăn được hải sản'*, *'ăn chay'*)\n"
                 "- 📸 **Gợi ý điểm check-in hot trend** (Gõ: *'gợi ý điểm check in'*)\n"
+                "- 💳 **Chính sách giá & Đặt cọc** (Gõ: *'đặt cọc bao nhiêu'*)\n"
                 "- 🔄 **Điều chỉnh lịch trình riêng** (Gõ: *'tôi muốn đổi lịch trình'*)\n"
                 "- 📍 **Lịch trình tour chi tiết** (Sapa, Phú Quốc, Đà Nẵng, Đà Lạt...)\n"
                 "- 🚗 **Hướng dẫn di chuyển & Phương tiện**"
@@ -570,7 +630,8 @@ elif "CHATBOT" in app_mode:
         with st.chat_message("assistant"):
             st.markdown(response)
             if matched_img:
-                st.image(matched_img, use_container_width=True)
+                local_p, fall_u = matched_img
+                safe_image(local_p, fall_u, use_container_width=True)
                 
         assistant_msg = {"role": "assistant", "content": response}
         if matched_img:
